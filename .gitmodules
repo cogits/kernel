@@ -1,0 +1,9 @@
+[submodule "deps/busybox"]
+	path = deps/busybox
+	url = https://git.busybox.net/busybox
+[submodule "deps/linux"]
+	path = deps/linux
+	url = https://github.com/torvalds/linux.git
+[submodule "deps/u-boot"]
+	path = deps/u-boot
+	url = https://github.com/u-boot/u-boot
