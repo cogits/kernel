@@ -3,6 +3,7 @@ QEMU := qemu-system-riscv64
 CROSS := riscv64-linux-gnu-
 NPROC := $(shell expr `nproc` - 1)
 
+export KERNEL_PATH := $(ROOT)/deps/linux
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
@@ -58,17 +59,21 @@ telnet:
 	telnet localhost 7023
 
 
-## driver
-hello:
-	cd ./driver/eg_01_hello_world; \
-		make -C ../../linux-6.3 ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- M=$$(pwd) modules
+## modules
+modules: kernel
+	make -C lkmpg
 
+modules_clean:
+	make -C lkmpg clean
+
+## clean
 DEPS := busybox linux u-boot
-distclean:
+distclean: modules_clean
 	@cd ./deps && for dir in $(DEPS); do \
 		echo "clean $$dir"; \
 		(cd $${dir} && git clean -fdx .); \
 	done
+	git clean -fdx .
 
 
 ## uboot
