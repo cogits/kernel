@@ -9,7 +9,7 @@ startstop-objs := start.o stop.o
 PWD := $(CURDIR)
 
 all:
-	make -C $(KERNEL_PATH) ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- M=$(PWD) modules
+	make -C $(KERNEL_PATH) M=$(PWD) modules
 
 clean:
-	make -C $(KERNEL_PATH) ARCH=riscv CROSS_COMPILE=riscv64-linux-gnu- M=$(PWD) clean
+	make -C $(KERNEL_PATH) M=$(PWD) clean

@@ -1,9 +1,10 @@
 ROOT := $(CURDIR)
 QEMU := qemu-system-riscv64
-CROSS := riscv64-linux-gnu-
-NPROC := $(shell expr `nproc` - 1)
 
+export ARCH := riscv
+export CROSS_COMPILE := riscv64-linux-gnu-
 export KERNEL_PATH := $(ROOT)/deps/linux
+export NPROC := $(shell expr `nproc` - 1)
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
@@ -22,9 +23,7 @@ run: kernel rootfs
 kernel: deps/linux/arch/riscv/boot/Image
 deps/linux/arch/riscv/boot/Image:
 	cp ./patches/linux/config ./deps/linux/.config
-	cd ./deps/linux \
-		&& make ARCH=riscv CROSS_COMPILE=$(CROSS) olddefconfig \
-		&& make ARCH=riscv CROSS_COMPILE=$(CROSS) -j $(NPROC)
+	cd ./deps/linux && make olddefconfig && make -j $(NPROC)
 
 
 ## rootfs/busybox
@@ -48,9 +47,7 @@ deps/busybox/rootfs.img: deps/busybox/_install
 
 deps/busybox/_install:
 	cp ./patches/busybox/config ./deps/busybox/.config
-	cd ./deps/busybox/ \
-		&& CROSS_COMPILE=$(CROSS) make oldconfig \
-		&& CROSS_COMPILE=$(CROSS) make -j $(NPROC) install
+	cd ./deps/busybox/ && make oldconfig && make -j $(NPROC) install
 
 
 ## telnet
@@ -83,7 +80,7 @@ boot: uboot
 
 uboot: deps/u-boot/u-boot.bin
 deps/u-boot/u-boot.bin:
-	cd ./deps/u-boot && make qemu-riscv64_defconfig && make CROSS_COMPILE=$(CROSS) -j $(NPROC)
+	cd ./deps/u-boot && make qemu-riscv64_defconfig && make -j $(NPROC)
 
 # 通过 u-boot 启动 kernel
 # https://quard-star-tutorial.readthedocs.io (基于qemu-riscv从0开始构建嵌入式linux系统)
