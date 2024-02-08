@@ -1,5 +1,6 @@
 DIRS := \
-		hello
+		hello \
+		chardev
 
 all:
 	@for dir in $(DIRS); do \
