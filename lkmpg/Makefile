@@ -1,6 +1,7 @@
 DIRS := \
-		hello \
-		chardev
+	hello \
+	chardev \
+	proc
 
 all:
 	@for dir in $(DIRS); do \

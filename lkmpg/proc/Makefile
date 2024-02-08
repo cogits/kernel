@@ -1,0 +1,12 @@
+obj-m += procfs1.o
+obj-m += procfs2.o
+obj-m += procfs3.o
+obj-m += procfs4.o
+
+PWD := $(CURDIR)
+
+all:
+	make -C $(KERNEL_PATH) M=$(PWD) modules
+
+clean:
+	make -C $(KERNEL_PATH) M=$(PWD) clean
