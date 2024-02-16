@@ -5,3 +5,4 @@
 *_shipped
 Module.symvers
 modules.order
+chardev/user_ioctl

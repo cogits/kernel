@@ -5,6 +5,7 @@ dependencies:
 - nfs-kernel-server
 - fuse-ext2
 - rsync
+- zig cc
 
 clone:
 
