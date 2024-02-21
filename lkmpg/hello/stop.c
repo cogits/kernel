@@ -3,11 +3,17 @@
  */
 
 #include <linux/kernel.h> /* We are doing kernel work */
-#include <linux/module.h> /* Specifically, a module  */
+#include <linux/module.h> /* Specifically, a module */
+void bye(void);
+
+void hello(void)
+{
+	pr_info("Hello, world - this is the kernel speaking\n");
+}
 
 void cleanup_module(void)
 {
-    pr_info("Short is the life of a kernel module\n");
+	bye();
 }
 
 MODULE_LICENSE("GPL");
