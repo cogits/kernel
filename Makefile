@@ -58,7 +58,7 @@ telnet:
 
 ## modules
 modules: kernel
-	make -C lkmpg
+	make -C lkmpg V=12
 
 modules_clean:
 	make -C lkmpg clean

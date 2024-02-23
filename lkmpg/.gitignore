@@ -2,5 +2,6 @@
 *.o
 *.ko
 *.mod*
+*_shipped
 Module.symvers
 modules.order

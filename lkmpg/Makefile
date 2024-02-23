@@ -2,7 +2,8 @@ DIRS := \
 	hello \
 	chardev \
 	proc \
-	sysfs
+	sysfs \
+	embed
 
 all:
 	@for dir in $(DIRS); do \
