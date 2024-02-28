@@ -165,3 +165,8 @@ module_init(chardev_init);
 module_exit(chardev_exit);
 
 MODULE_LICENSE("GPL");
+
+// NOTE
+// Since Linux v3.14, the read, write and seek operations are guaranteed for thread-safe by using
+// the f_pos specific lock, which makes the file position update to become the mutual exclusion.
+// So, we can safely implement those operations without unnecessary locking.
