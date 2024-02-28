@@ -57,7 +57,11 @@ telnet:
 
 
 ## modules
+# there's two ways of building external modules
 modules: kernel
+	# for lkmpg/hello
+	make -C $(KERNEL_PATH) M=$(PWD)/lkmpg modules V=12
+	# for others
 	make -C lkmpg V=12
 
 modules_clean:

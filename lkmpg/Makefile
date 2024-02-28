@@ -1,5 +1,8 @@
+# another way of building external kernel module directory
+# note the last `/`, it's necessary.
+obj-y += hello/
+
 DIRS := \
-	hello \
 	chardev \
 	proc \
 	sysfs \
@@ -13,6 +16,9 @@ all:
 	done
 
 clean:
+	# unfortunately, these's no way of cleaning the directory automatically
+	git clean -fdx hello
+
 	@for dir in $(DIRS); do \
 		echo "clean $$dir"; \
 		make -C $$dir clean; \
