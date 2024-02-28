@@ -3,7 +3,8 @@ DIRS := \
 	chardev \
 	proc \
 	sysfs \
-	embed
+	embed \
+	threads
 
 all:
 	@for dir in $(DIRS); do \
