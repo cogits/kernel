@@ -3,6 +3,8 @@ obj-m += procfs2.o
 obj-m += procfs3.o
 obj-m += procfs4.o
 
+ccflags-y := -DDYNAMIC_DEBUG_MODULE
+
 PWD := $(CURDIR)
 
 all:

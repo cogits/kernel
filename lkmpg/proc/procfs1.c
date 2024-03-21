@@ -24,13 +24,13 @@ static ssize_t procfile_read(struct file *file_pointer, char __user *buffer, siz
 	ssize_t ret = len;
 
 	if (*offset >= len) {
-		pr_info("EOF\n");
+		pr_debug("EOF\n");
 		ret = 0;
 	} else if (copy_to_user(buffer, s, len)) {
-		pr_info("copy_to_user failed\n");
+		pr_debug("copy_to_user failed\n");
 		ret = -EFAULT;
 	} else {
-		pr_info("procfile read %s\n", file_pointer->f_path.dentry->d_name.name);
+		pr_debug("procfile read %s\n", file_pointer->f_path.dentry->d_name.name);
 		*offset += len;
 	}
 
