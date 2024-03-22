@@ -1,0 +1,16 @@
+diff --git a/libbb/lineedit.c b/libbb/lineedit.c
+index c87d606..936a31c 100644
+--- a/libbb/lineedit.c
++++ b/libbb/lineedit.c
+@@ -1661,8 +1661,9 @@ static void remember_in_history(char *str)
+ 		return;
+ 	i = state->cnt_history;
+ 	/* Don't save dupes */
+-	if (i && strcmp(state->history[i-1], str) == 0)
+-		return;
++	for (i = 0; i < state->cnt_history; i++)
++		if (strcmp(state->history[i], str) == 0)
++			return;
+ 
+ 	free(state->history[state->max_history]); /* redundant, paranoia */
+ 	state->history[state->max_history] = NULL; /* redundant, paranoia */

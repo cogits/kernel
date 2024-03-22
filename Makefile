@@ -45,7 +45,11 @@ deps/busybox/rootfs.img: deps/busybox/_install
 		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)"'|' rootfs/etc/init.d/rcS \
 		&& cp -r ./_install/* rootfs && fusermount -u rootfs
 
+deps/busybox/_install: DIFF_FILES := $(shell find patches/busybox -type f -name '*.diff' | grep -v "^patches/busybox/rootfs")
 deps/busybox/_install:
+	# 找出 patches/busybox/*~*rootfs(/) 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
+	$(foreach diff,$(DIFF_FILES),\
+		patch -N $(patsubst patches/%.diff,deps/%,$(diff)) $(diff);)
 	cp ./patches/busybox/config ./deps/busybox/.config
 	cd ./deps/busybox/ && make oldconfig && make -j $(NPROC) install
 
@@ -72,7 +76,7 @@ DEPS := busybox linux u-boot
 distclean: modules_clean
 	@cd ./deps && for dir in $(DEPS); do \
 		echo "clean $$dir"; \
-		(cd $${dir} && git clean -fdx .); \
+		(cd $${dir} && git clean -fdx . && git reset --hard); \
 	done
 	git clean -fdx .
 
