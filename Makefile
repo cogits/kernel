@@ -6,6 +6,8 @@ export CROSS_COMPILE := riscv64-linux-gnu-
 export KERNEL_PATH := $(ROOT)/deps/linux
 export NPROC := $(shell expr `nproc` - 1)
 
+all: kernel rootfs modules
+
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
 run: kernel rootfs
@@ -68,17 +70,28 @@ modules: kernel
 	# for others
 	make -C lkmpg V=12
 
-modules_clean:
-	make -C lkmpg clean
-
-## clean
+# NOTE $(SUBDIR) 不能是局部变量
 DEPS := busybox linux u-boot
-distclean: modules_clean
-	@cd ./deps && for dir in $(DEPS); do \
-		echo "clean $$dir"; \
-		(cd $${dir} && git clean -fdx . && git reset --hard); \
-	done
+SUBDIR := $(patsubst %,deps/%,$(DEPS)) lkmpg
+## clean
+clean:
+# distclean
+ifeq ($(dir),)
+	$(foreach dir,$(DEPS),\
+		cd $(CURDIR)/deps/$(dir); git clean -fdx .; git reset --hard;)
 	git clean -fdx .
+else
+# 清理子目录
+# make clean dir=xxx
+ifeq (,$(findstring $(dir),$(SUBDIR)))
+	$(error $(dir) not exist in $(SUBDIR))
+endif
+ifneq (,$(filter deps/$(dir),$(SUBDIR)))
+	cd deps/$(dir) && git clean -fdx . && git reset --hard
+else
+	make -C lkmpg clean
+endif
+endif
 
 
 ## uboot
@@ -89,6 +102,9 @@ boot: uboot
 uboot: deps/u-boot/u-boot.bin
 deps/u-boot/u-boot.bin:
 	cd ./deps/u-boot && make qemu-riscv64_defconfig && make -j $(NPROC)
+
+
+.PHONY: all run telnet boot uboot kernel rootfs modules clean
 
 # 通过 u-boot 启动 kernel
 # https://quard-star-tutorial.readthedocs.io (基于qemu-riscv从0开始构建嵌入式linux系统)
