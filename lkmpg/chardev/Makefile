@@ -5,10 +5,10 @@ obj-m += ioctl.o
 PWD := $(CURDIR)
 
 all: user_ioctl
-	make -C $(KERNEL_PATH) M=$(PWD) modules
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) modules
 
 clean:
-	make -C $(KERNEL_PATH) M=$(PWD) clean
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean
 
 
 # userspace cmd for ioctl.ko

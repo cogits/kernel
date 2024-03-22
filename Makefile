@@ -4,7 +4,6 @@ QEMU := qemu-system-riscv64
 export ARCH := riscv
 export CROSS_COMPILE := riscv64-linux-gnu-
 export KERNEL_PATH := $(ROOT)/deps/linux
-export NPROC := $(shell expr `nproc` - 1)
 
 all: kernel rootfs modules
 
@@ -25,7 +24,7 @@ run: kernel rootfs
 kernel: deps/linux/arch/riscv/boot/Image
 deps/linux/arch/riscv/boot/Image:
 	cp ./patches/linux/config ./deps/linux/.config
-	cd ./deps/linux && make olddefconfig && make -j $(NPROC)
+	cd ./deps/linux && $(MAKE) olddefconfig && $(MAKE)
 
 
 ## rootfs/busybox
@@ -53,7 +52,7 @@ deps/busybox/_install:
 	$(foreach diff,$(DIFF_FILES),\
 		patch -N $(patsubst patches/%.diff,deps/%,$(diff)) $(diff);)
 	cp ./patches/busybox/config ./deps/busybox/.config
-	cd ./deps/busybox/ && make oldconfig && make -j $(NPROC) install
+	cd ./deps/busybox/ && $(MAKE) oldconfig && $(MAKE) install
 
 
 ## telnet
@@ -62,13 +61,13 @@ telnet:
 	telnet localhost 7023
 
 
-## modules
+## modules (add V=12 for verbose output)
 # there's two ways of building external modules
 modules: kernel
 	# for lkmpg/hello
-	make -C $(KERNEL_PATH) M=$(PWD)/lkmpg modules V=12
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD)/lkmpg modules
 	# for others
-	make -C lkmpg V=12
+	$(MAKE) -C lkmpg
 
 # NOTE $(SUBDIR) 不能是局部变量
 DEPS := busybox linux u-boot
@@ -89,7 +88,7 @@ endif
 ifneq (,$(filter deps/$(dir),$(SUBDIR)))
 	cd deps/$(dir) && git clean -fdx . && git reset --hard
 else
-	make -C lkmpg clean
+	$(MAKE) -C lkmpg clean
 endif
 endif
 
@@ -101,7 +100,7 @@ boot: uboot
 
 uboot: deps/u-boot/u-boot.bin
 deps/u-boot/u-boot.bin:
-	cd ./deps/u-boot && make qemu-riscv64_defconfig && make -j $(NPROC)
+	cd ./deps/u-boot && $(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
 
 .PHONY: all run telnet boot uboot kernel rootfs modules clean

@@ -3,7 +3,7 @@ obj-m += hello-sysfs.o
 PWD := $(CURDIR)
 
 all:
-	make -C $(KERNEL_PATH) M=$(PWD) modules
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) modules
 
 clean:
-	make -C $(KERNEL_PATH) M=$(PWD) clean
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean

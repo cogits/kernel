@@ -9,17 +9,18 @@ DIRS := \
 	embed \
 	threads
 
-all:
-	@for dir in $(DIRS); do \
-		echo "build $$dir"; \
-		make -C $$dir; \
-	done
+BUILD_SUBDIRS := $(addprefix build_,$(DIRS))
+CLEAN_SUBDIRS := $(addprefix clean_,$(DIRS))
 
-clean:
+all: $(BUILD_SUBDIRS)
+
+# 对于每个子目录，定义一个规则来执行其 Makefile
+$(BUILD_SUBDIRS):
+	$(MAKE) -C $(@:build_%=%)
+
+$(CLEAN_SUBDIRS):
+	$(MAKE) -C $(@:clean_%=%) clean
+
+clean: $(CLEAN_SUBDIRS)
 	# unfortunately, these's no way of cleaning the directory automatically
 	git clean -fdx hello
-
-	@for dir in $(DIRS); do \
-		echo "clean $$dir"; \
-		make -C $$dir clean; \
-	done
