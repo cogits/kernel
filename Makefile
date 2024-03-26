@@ -1,5 +1,7 @@
 ROOT := $(CURDIR)
-QEMU := qemu-system-riscv64
+BIN_PREFIX := result/bin
+QEMU := $(BIN_PREFIX)/qemu-system-riscv64
+QEMU_IMG := $(BIN_PREFIX)/qemu-img
 
 export ARCH := riscv
 export CROSS_COMPILE := riscv64-linux-gnu-
@@ -9,7 +11,7 @@ all: kernel rootfs modules
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
-run: kernel rootfs
+run: qemu kernel rootfs
 	$(QEMU) -M virt -m 512M -smp 4 -nographic \
 		-kernel deps/linux/arch/riscv/boot/Image \
 		-drive file=deps/busybox/rootfs.img,format=raw,id=hd0 \
@@ -39,8 +41,8 @@ deps/linux/arch/riscv/boot/Image:
 # sudo echo '$宿主机共享目录        127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
 rootfs: deps/busybox/rootfs.img
-deps/busybox/rootfs.img: deps/busybox/_install
-	cd ./deps/busybox && qemu-img create rootfs.img 64m && mkfs.ext4 rootfs.img \
+deps/busybox/rootfs.img: qemu deps/busybox/_install
+	cd ./deps/busybox && $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
 		&& mkdir -p rootfs && fuse-ext2 -o rw+ rootfs.img rootfs \
 		&& rsync -av $(ROOT)/patches/busybox/rootfs/ rootfs --exclude='.gitkeep' \
 		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)"'|' rootfs/etc/init.d/rcS \
@@ -54,6 +56,11 @@ deps/busybox/_install:
 	cp ./patches/busybox/config ./deps/busybox/.config
 	cd ./deps/busybox/ && $(MAKE) oldconfig && $(MAKE) install
 
+qemu: $(QEMU)
+$(QEMU):
+	cd ./deps/qemu && mkdir -p build && cd build \
+		&& ../configure --target-list=riscv64-softmmu,riscv64-linux-user --prefix=$(ROOT)/result \
+		&& $(MAKE) install
 
 ## telnet
 # https://github.com/d0u9/Linux-Device-Driver/blob/master/02_getting_start_with_driver_development/05_telnet_server.md
@@ -70,7 +77,7 @@ modules: kernel
 	$(MAKE) -C lkmpg
 
 # NOTE $(SUBDIR) 不能是局部变量
-DEPS := busybox linux u-boot
+DEPS := busybox linux u-boot qemu
 SUBDIR := $(patsubst %,deps/%,$(DEPS)) lkmpg
 ## clean
 clean:
@@ -95,7 +102,7 @@ endif
 
 ## uboot
 # https://zhuanlan.zhihu.com/p/482858701
-boot: uboot
+boot: qemu uboot
 	$(QEMU) -M virt -m 512M -nographic -bios deps/u-boot/u-boot.bin
 
 uboot: deps/u-boot/u-boot.bin
