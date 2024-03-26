@@ -1,5 +1,5 @@
 ROOT := $(CURDIR)
-BIN_PREFIX := result/bin
+BIN_PREFIX := $(CURDIR)/result/bin
 QEMU := $(BIN_PREFIX)/qemu-system-riscv64
 QEMU_IMG := $(BIN_PREFIX)/qemu-img
 
@@ -41,7 +41,7 @@ deps/linux/arch/riscv/boot/Image:
 # sudo echo '$宿主机共享目录        127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
 rootfs: deps/busybox/rootfs.img
-deps/busybox/rootfs.img: qemu deps/busybox/_install
+deps/busybox/rootfs.img: $(QEMU_IMG) deps/busybox/_install
 	cd ./deps/busybox && $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
 		&& mkdir -p rootfs && fuse-ext2 -o rw+ rootfs.img rootfs \
 		&& rsync -av $(ROOT)/patches/busybox/rootfs/ rootfs --exclude='.gitkeep' \
@@ -56,10 +56,14 @@ deps/busybox/_install:
 	cp ./patches/busybox/config ./deps/busybox/.config
 	cd ./deps/busybox/ && $(MAKE) oldconfig && $(MAKE) install
 
-qemu: $(QEMU)
+
+qemu: $(QEMU) $(QEMU_IMG)
+# NOTE 不要让一个文件目标信赖于一个伪目标，否则即使文件存在，也总是执行伪目标。
+# 当 $(QEMU) 生成时 $(QEMU_IMG) 也一并生成了。
+$(QEMU_IMG): $(QEMU)
 $(QEMU):
 	cd ./deps/qemu && mkdir -p build && cd build \
-		&& ../configure --target-list=riscv64-softmmu,riscv64-linux-user --prefix=$(ROOT)/result \
+		&& ../configure --target-list=riscv64-softmmu,riscv64-linux-user --enable-slirp --prefix=$(ROOT)/result \
 		&& $(MAKE) install
 
 ## telnet
@@ -110,7 +114,8 @@ deps/u-boot/u-boot.bin:
 	cd ./deps/u-boot && $(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
 
-.PHONY: all run telnet boot uboot kernel rootfs modules clean
+# 声明伪目录
+.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean
 
 # 通过 u-boot 启动 kernel
 # https://quard-star-tutorial.readthedocs.io (基于qemu-riscv从0开始构建嵌入式linux系统)
