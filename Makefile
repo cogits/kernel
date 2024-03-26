@@ -44,7 +44,7 @@ deps/linux/arch/riscv/boot/Image:
 # https://github.com/d0u9/Linux-Device-Driver/blob/master/02_getting_start_with_driver_development/04_nfs_support.md
 # ```sh
 # sudo apt install nfs-kernel-server
-# sudo echo '$宿主机共享目录        127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
+# sudo echo '${宿主机共享目录}      127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
 rootfs: deps/busybox/rootfs.img
 deps/busybox/rootfs.img: $(QEMU_IMG) deps/busybox/_install
@@ -64,6 +64,7 @@ deps/busybox/_install:
 
 
 ## build qemu
+# https://zhuanlan.zhihu.com/p/258394849
 qemu: $(QEMU) $(QEMU_IMG)
 # NOTE 不要让一个文件目标信赖于一个伪目标，否则即使文件存在，也总是执行伪目标。
 # 当 $(QEMU) 生成时 $(QEMU_IMG) 也一并生成了。
