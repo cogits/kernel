@@ -51,7 +51,7 @@ deps/busybox/rootfs.img: $(QEMU_IMG) deps/busybox/_install
 	cd ./deps/busybox && $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
 		&& mkdir -p rootfs && fuse-ext2 -o rw+ rootfs.img rootfs \
 		&& rsync -av $(ROOT)/patches/busybox/rootfs/ rootfs --exclude='.gitkeep' \
-		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)"'|' rootfs/etc/init.d/rcS \
+		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS \
 		&& cp -r ./_install/* rootfs && fusermount -u rootfs
 
 deps/busybox/_install: DIFF_FILES := $(shell find patches/busybox -type f -name '*.diff' | grep -v "^patches/busybox/rootfs")
@@ -78,10 +78,10 @@ $(QEMU):
 ## kernel modules (add V=12 for verbose output)
 # there's two ways of building external modules
 modules: kernel
-	# for lkmpg/hello
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD)/lkmpg modules
+	# for drivers/hello
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD)/drivers modules
 	# for others
-	$(MAKE) -C lkmpg
+	$(MAKE) -C drivers
 
 
 ## clean
@@ -91,20 +91,19 @@ CLEAN_DEPDIRS := $(addprefix clean_,$(DEPDIR))
 
 $(CLEAN_DEPDIRS):
 	cd $(@:clean_%=%); git clean -fdx; git reset --hard
-clean_lkmpg:
-	$(MAKE) -C lkmpg clean
+clean_modules:
+	$(MAKE) -C drivers clean
 
 # distclean
-distclean: $(CLEAN_DEPDIRS) clean_lkmpg
+distclean: $(CLEAN_DEPDIRS) clean_modules
 	git clean -fdx .
 
-# clean 单个目录
 clean:
-# 默认清理 driver 目录
+# 默认清理 drivers 目录
 ifeq ($(dep),)
-	$(MAKE) clean_lkmpg
+	$(MAKE) clean_modules
 else
-# 清理子目录
+# 清理 deps 子目录
 # make clean dep=xxx
 # NOTE $(DEPDIR) 不能是局部变量
 ifeq (,$(findstring $(dep),$(DEPDIR)))
@@ -133,4 +132,4 @@ deps/u-boot/u-boot.bin:
 # https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean distclean clean_lkmpg $(CLEAN_DEPDIRS)
+.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean distclean clean_modules $(CLEAN_DEPDIRS)
