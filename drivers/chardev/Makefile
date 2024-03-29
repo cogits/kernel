@@ -1,10 +1,11 @@
 obj-m += chardev.o
 obj-m += ioctltest.o
 obj-m += ioctl.o
+obj-m += scull/
 
 PWD := $(CURDIR)
 
-all: user_ioctl
+all: ioctl-riscv64
 	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) modules
 
 clean:
@@ -12,5 +13,9 @@ clean:
 
 
 # userspace cmd for ioctl.ko
-user_ioctl: user/ioctl.c
+ioctl-riscv64: user/ioctl.c
 	zig cc --target=riscv64-linux -Os $^ -o $@
+
+# TODO introduce compat_ioctl
+# ioctl-riscv32: user/ioctl.c
+# 	zig cc --target=riscv32-linux -Os $^ -o $@

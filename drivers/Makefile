@@ -22,5 +22,4 @@ $(CLEAN_SUBDIRS):
 	$(MAKE) -C $(@:clean_%=%) clean
 
 clean: $(CLEAN_SUBDIRS)
-	# unfortunately, these's no way of cleaning the directory automatically
-	git clean -fdx hello
+	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean

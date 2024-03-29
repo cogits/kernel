@@ -5,5 +5,5 @@
 *_shipped
 Module.symvers
 modules.order
-chardev/user_ioctl
+chardev/ioctl-riscv*
 threads/cat_nonblock
