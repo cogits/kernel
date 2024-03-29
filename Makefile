@@ -84,35 +84,20 @@ modules: kernel
 
 
 ## clean
+# 清理 drivers 目录
+clean:
+	$(MAKE) -C drivers clean
+
 DEPS := busybox linux u-boot qemu
-DEPDIR := $(patsubst %,deps/%,$(DEPS))
 CLEAN_DEPDIRS := $(addprefix clean/,$(DEPS))
 
 # make clean/xxx
 $(CLEAN_DEPDIRS):
 	cd deps/$(@:clean/%=%); git clean -fdx; git reset --hard
-clean_modules:
-	$(MAKE) -C drivers clean
 
 # distclean
 distclean: $(CLEAN_DEPDIRS) clean_modules
 	git clean -fdx .
-
-clean:
-# 默认清理 drivers 目录
-ifeq ($(dep),)
-	$(MAKE) clean_modules
-else
-# 清理 deps 子目录
-# make clean dep=xxx
-# NOTE $(DEPDIR) 不能是局部变量
-ifeq (,$(findstring $(dep),$(DEPDIR)))
-	$(error $(dep) not exist in $(DEPDIR))
-else
-	$(MAKE) clean/$(dep)
-endif
-endif
-
 
 
 ## uboot
@@ -132,4 +117,4 @@ deps/u-boot/u-boot.bin:
 # https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean distclean clean_modules $(CLEAN_DEPDIRS)
+.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean distclean $(CLEAN_DEPDIRS)
