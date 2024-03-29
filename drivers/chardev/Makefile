@@ -3,14 +3,8 @@ obj-m += ioctltest.o
 obj-m += ioctl.o
 obj-m += scull/
 
-PWD := $(CURDIR)
-
-all: ioctl-riscv64
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) modules
-
-clean:
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean
-
+all: user
+user: ioctl-riscv64
 
 # userspace cmd for ioctl.ko
 ioctl-riscv64: user/ioctl.c

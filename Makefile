@@ -76,21 +76,21 @@ $(QEMU):
 
 
 ## kernel modules (add V=12 for verbose output)
-# there's two ways of building external modules
 modules: kernel
-	# for drivers/hello
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD)/drivers modules
-	# for others
+	# build drivers only
+	# $(MAKE) -C $(KERNEL_PATH) M=$(PWD)/drivers modules
+	# build drivers and user applications
 	$(MAKE) -C drivers
 
 
 ## clean
 DEPS := busybox linux u-boot qemu
 DEPDIR := $(patsubst %,deps/%,$(DEPS))
-CLEAN_DEPDIRS := $(addprefix clean_,$(DEPDIR))
+CLEAN_DEPDIRS := $(addprefix clean/,$(DEPS))
 
+# make clean/xxx
 $(CLEAN_DEPDIRS):
-	cd $(@:clean_%=%); git clean -fdx; git reset --hard
+	cd deps/$(@:clean/%=%); git clean -fdx; git reset --hard
 clean_modules:
 	$(MAKE) -C drivers clean
 
@@ -109,7 +109,7 @@ else
 ifeq (,$(findstring $(dep),$(DEPDIR)))
 	$(error $(dep) not exist in $(DEPDIR))
 else
-	$(MAKE) $(addprefix clean_,$(patsubst %,deps/%,$(dep)))
+	$(MAKE) clean/$(dep)
 endif
 endif
 

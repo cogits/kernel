@@ -1,13 +1,8 @@
 obj-m += embed_art.o
 embed_art-objs := embed.o art.o
 
-PWD := $(CURDIR)
-
 all: art.o_shipped
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) modules
-
-clean:
-	$(MAKE) -C $(KERNEL_PATH) M=$(PWD) clean
+	$(MAKE) -C $(KERNEL_PATH) M=$(CURDIR) modules
 
 art.o_shipped: art.txt
 	$(CROSS_COMPILE)ld -r -b binary -o $@ $<
