@@ -2,6 +2,7 @@ ROOT := $(CURDIR)
 BIN_PREFIX := $(CURDIR)/result/bin
 QEMU := $(BIN_PREFIX)/qemu-system-riscv64
 QEMU_IMG := $(BIN_PREFIX)/qemu-img
+APK_STATIC := apk.static
 
 export ARCH := riscv
 export CROSS_COMPILE := riscv64-linux-gnu-
@@ -14,7 +15,7 @@ all: kernel rootfs modules
 run: qemu kernel rootfs
 	$(QEMU) -M virt -m 512M -smp 4 -nographic \
 		-kernel deps/linux/arch/riscv/boot/Image \
-		-drive file=deps/busybox/rootfs.img,format=raw,id=hd0 \
+		-drive file=result/rootfs.img,format=raw,id=hd0 \
 		-device virtio-blk-device,drive=hd0 \
 		-netdev user,id=host_net0,hostfwd=tcp::7023-:23 \
 		-device e1000,mac=52:54:00:12:34:50,netdev=host_net0 \
@@ -35,6 +36,10 @@ deps/linux/arch/riscv/boot/Image:
 	cd ./deps/linux && $(MAKE) olddefconfig && $(MAKE)
 
 
+## rootfs
+rootfs: rootfs/busybox
+
+
 ## rootfs/busybox
 # https://zhuanlan.zhihu.com/p/258394849
 # https://wiki.debian.org/ManipulatingISOs#Loopmount_an_ISO_Without_Administrative_Privileges
@@ -46,21 +51,44 @@ deps/linux/arch/riscv/boot/Image:
 # sudo apt install nfs-kernel-server
 # sudo echo '${宿主机共享目录}      127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
-rootfs: deps/busybox/rootfs.img
-deps/busybox/rootfs.img: $(QEMU_IMG) deps/busybox/_install
-	cd ./deps/busybox && $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
-		&& mkdir -p rootfs && fuse-ext2 -o rw+ rootfs.img rootfs \
-		&& rsync -av $(ROOT)/patches/busybox/rootfs/ rootfs --exclude='.gitkeep' \
+rootfs/busybox: result/rootfs.img
+result/rootfs.img: $(QEMU_IMG) deps/busybox/_install result/rootfs
+	cd ./result \
+		&& $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
+		&& fuse-ext2 -o rw+ rootfs.img rootfs \
+		&& rsync -av $(ROOT)/patches/rootfs/ rootfs --exclude='.gitkeep' \
 		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS \
-		&& cp -r ./_install/* rootfs && fusermount -u rootfs
+		&& cp -r $(ROOT)/deps/busybox/_install/* rootfs \
+		&& fusermount -u rootfs
 
-deps/busybox/_install: DIFF_FILES := $(shell find patches/busybox -type f -name '*.diff' | grep -v "^patches/busybox/rootfs")
+deps/busybox/_install: DIFF_FILES := $(shell find patches/busybox -type f -name '*.diff')
 deps/busybox/_install:
-	# 找出 patches/busybox/*~*rootfs(/) 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
+	# 找出 patches/busybox/ 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
 	$(foreach diff,$(DIFF_FILES),\
 		patch -N $(patsubst patches/%.diff,deps/%,$(diff)) $(diff);)
 	cp ./patches/busybox/config ./deps/busybox/.config
 	cd ./deps/busybox/ && $(MAKE) oldconfig && $(MAKE) install
+
+
+# requires root privileges
+rootfs/alpine: mirror := https://mirror.tuna.tsinghua.edu.cn/alpine
+rootfs/alpine: $(QEMU_IMG) result/rootfs
+	cd ./result \
+		&& $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
+		&& sudo mount -o loop rootfs.img rootfs \
+		&& sudo $(APK_STATIC) -X $(mirror)/edge/main -U --allow-untrusted \
+			-p rootfs --initdb add apk-tools coreutils busybox-extras \
+		&& sudo rsync -av $(ROOT)/patches/rootfs/ rootfs --exclude='.gitkeep' \
+		&& sudo sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS \
+		&& sudo sed -i 's|$${MIRROR}|'"$(mirror)"'|' rootfs/etc/apk/repositories \
+		&& sudo umount rootfs
+
+result/rootfs:
+	mkdir -p result/rootfs
+
+clean/rootfs:
+	cd ./result && rm -rf rootfs/ rootfs.img
+
 
 
 ## build qemu
@@ -96,7 +124,7 @@ $(CLEAN_DEPDIRS):
 	cd deps/$(@:clean/%=%); git clean -fdx; git reset --hard
 
 # distclean
-distclean: $(CLEAN_DEPDIRS) clean_modules
+distclean: $(CLEAN_DEPDIRS)
 	git clean -fdx .
 
 

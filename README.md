@@ -1,5 +1,6 @@
 dependencies:
 
+for compiling kernel, busybox and drivers
 - gcc-riscv64-linux-gnu
 - nfs-kernel-server
 - fuse-ext2
@@ -9,6 +10,10 @@ dependencies:
 for compiling qemu
 - libglib2.0-dev
 - libslirp-dev
+
+for making alpine rootfs (optional)
+- qemu-user-static (binfmt support)
+- apk.static (riscv64)
 
 clone:
 
