@@ -17,7 +17,7 @@ ip link set eth1 up
 # telnet
 mkdir dev/pts
 mount -t devpts devpts /dev/pts
-telnetd -l /bin/sh&
+telnetd -l ${LOGIN} &
 
 # nfs
 mount -t nfs -o nolock HOST_MACHINE:${HOST_PATH} /mnt

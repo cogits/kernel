@@ -57,6 +57,7 @@ result/rootfs.img: $(QEMU_IMG) deps/busybox/_install result/rootfs
 		&& $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
 		&& fuse-ext2 -o rw+ rootfs.img rootfs \
 		&& rsync -av $(ROOT)/patches/rootfs/ rootfs --exclude='.gitkeep' \
+		&& sed -i 's|$${LOGIN}|'"/bin/sh"'|' rootfs/etc/init.d/rcS \
 		&& sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS \
 		&& cp -r $(ROOT)/deps/busybox/_install/* rootfs \
 		&& fusermount -u rootfs
@@ -74,11 +75,14 @@ deps/busybox/_install:
 rootfs/alpine: mirror := https://mirror.tuna.tsinghua.edu.cn/alpine
 rootfs/alpine: $(QEMU_IMG) result/rootfs
 	cd ./result \
-		&& $(QEMU_IMG) create rootfs.img 64m && mkfs.ext4 rootfs.img \
+		&& $(QEMU_IMG) create rootfs.img 128m && mkfs.ext4 rootfs.img \
 		&& sudo mount -o loop rootfs.img rootfs \
-		&& sudo $(APK_STATIC) -X $(mirror)/edge/main -U --allow-untrusted \
-			-p rootfs --initdb add apk-tools coreutils busybox-extras \
+		&& sudo $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted \
+			-p rootfs --initdb add apk-tools coreutils busybox-extras binutils musl-utils zsh vim \
+			eza bat fd ripgrep hexyl btop fzf fzf-vim fzf-zsh-plugin zsh-syntax-highlighting \
+			zsh-autosuggestions zsh-history-substring-search \
 		&& sudo rsync -av $(ROOT)/patches/rootfs/ rootfs --exclude='.gitkeep' \
+		&& sudo sed -i 's|$${LOGIN}|'"/bin/zsh"'|' rootfs/etc/init.d/rcS \
 		&& sudo sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS \
 		&& sudo sed -i 's|$${MIRROR}|'"$(mirror)"'|' rootfs/etc/apk/repositories \
 		&& sudo umount rootfs
