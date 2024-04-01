@@ -29,3 +29,4 @@ references:
 - [Advanced examples of Linux Device Drivers](https://github.com/d0u9/Linux-Device-Driver)
 - [The Linux Kernel Module Programming Guide](https://github.com/sysprog21/lkmpg)
 - [基于qemu-riscv从0开始构建嵌入式linux系统](https://quard-star-tutorial.readthedocs.io)
+- [QEMU: Network emulation](https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack)

@@ -8,6 +8,7 @@ mount -t sysfs none /sys
 # NIC up
 ip link set eth0 up
 ip addr add 10.0.2.15/24 dev eth0
+ip route add default via 10.0.2.2
 ip link set lo up
 ip link set eth1 up
 
