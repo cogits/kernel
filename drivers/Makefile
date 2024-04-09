@@ -7,7 +7,7 @@ obj-y += threads/
 # embed 目录，在编译 ko 之前必须生成 binary blob，所以需要单独编译
 # chardev 和 threads 需要额外编译用户态的程序
 EXTRA_DIRS := chardev threads embed
-BUILD_EXTRA_DIRS := $(addprefix drv/,$(EXTRA_DIRS))
+BUILD_EXTRA_DIRS := $(addprefix extra/,$(EXTRA_DIRS))
 
 build: build_modules $(BUILD_EXTRA_DIRS)
 
@@ -24,4 +24,7 @@ build_modules:
 # build other steps
 # 对于每个子目录，定义一个规则来执行其 Makefile
 $(BUILD_EXTRA_DIRS):
-	$(MAKE) -C $(@:drv/%=%)
+	$(MAKE) -C $(@:extra/%=%)
+
+
+.PHONY: build clean build_modules extra/*

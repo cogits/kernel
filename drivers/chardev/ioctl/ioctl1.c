@@ -16,7 +16,7 @@
 
 #include <asm/errno.h>
 
-#include "chardev.h"
+#include "../chardev.h"
 #define SUCCESS 0
 #define DEVICE_NAME "char_dev"
 #define BUF_LEN 80

@@ -26,21 +26,15 @@ seq_file is more powerful.
 
 To build this module, execute:
 
-```bash
-make KERNELDIR=/path/to/kernel/source/dir
+```sh
+make modules -j $(nproc)
 ```
-
-If you have already set and exported `KERNELDIR` environment variable, simply
-execute `make` is enough.
-
-If neither `KERNELDIR` environment variable nor `KERNELDIR` option of make
-are set, the current running kernel will be built against.
 
 ## Usage
 
-Copy **proc_fs_basic.ko** file to the target machine, then run:
+Run:
 
-```bash
+```sh
 insmod proc_fs_basic.ko
 ```
 
@@ -55,7 +49,7 @@ Execute `cat /proc/proc_demo/proc_fs_mul` in the command line, you will get
 ## Note
 
 `proc_create_data()` accepts a data pointer which can be passed to `open()`
-method. In `open()` method, `PDE_DATA(inode)` helps retrieving pointer to data
+method. In `open()` method, `pde_data(inode)` helps retrieving pointer to data
 from inode structure.
 
 Also, `simple_open()` method's third argument acts as a data pointer as well.

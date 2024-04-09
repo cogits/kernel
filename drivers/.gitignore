@@ -1,9 +1,8 @@
 .*
+!.gitignore
 *.o
 *.ko
 *.mod*
 *_shipped
 Module.symvers
 modules.order
-chardev/ioctl-riscv*
-threads/cat_nonblock

@@ -1,15 +1,17 @@
 obj-m += chardev.o
 obj-m += ioctltest.o
-obj-m += ioctl.o
+obj-m += ioctl/
 obj-m += scull/
 
-all: user
-user: ioctl-riscv64
+# 需要额外编译用户态的程序的目录
+EXTRA_DIRS := ioctl
+BUILD_EXTRA_DIRS := $(addprefix user/,$(EXTRA_DIRS))
 
-# userspace cmd for ioctl.ko
-ioctl-riscv64: user/ioctl.c
-	zig cc --target=riscv64-linux -Os $^ -o $@
+extra: $(BUILD_EXTRA_DIRS)
 
-# TODO introduce compat_ioctl
-# ioctl-riscv32: user/ioctl.c
-# 	zig cc --target=riscv32-linux -Os $^ -o $@
+# 对于每个子目录，定义一个规则来执行其 Makefile
+$(BUILD_EXTRA_DIRS):
+	$(MAKE) -C $(@:user/%=%)
+
+
+.PHONY: extra user/*

@@ -148,5 +148,6 @@ deps/u-boot/u-boot.bin:
 # https://blog.csdn.net/wangyijieonline/article/details/104843769
 # https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
 
+
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs modules clean distclean $(CLEAN_DEPDIRS)
+.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules clean distclean clean/*
