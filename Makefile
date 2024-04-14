@@ -120,14 +120,19 @@ modules: kernel
 clean:
 	$(MAKE) -C drivers clean
 
-DEPS := busybox linux u-boot qemu
-CLEAN_DEPDIRS := $(addprefix clean/,$(DEPS))
-
 # make clean/xxx
-$(CLEAN_DEPDIRS):
-	cd deps/$(@:clean/%=%); git clean -fdx; git reset --hard
+# 显式规则： $(CLEAN_DEPDIRS)
+# 隐式规则（要小心，即使目录不存在也会匹配）：
+clean/%:
+	cd deps/$(@:clean/%=%) && git clean -fdx && git reset --hard
+# 覆盖隐式规则
+clean/result:
+	rm -rf result/
 
 # distclean
+# `%` 不能单独用在右边的依赖名称中，所以必须定义变量
+DEPS := $(wildcard deps/*)
+CLEAN_DEPDIRS := $(DEPS:deps/%=clean/%)
 distclean: $(CLEAN_DEPDIRS)
 	git clean -fdx .
 
@@ -150,4 +155,4 @@ deps/u-boot/u-boot.bin:
 
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules clean distclean clean/*
+.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules distclean clean clean/*
