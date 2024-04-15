@@ -1,12 +1,19 @@
 ROOT := $(CURDIR)
-BIN_PREFIX := $(CURDIR)/result/bin
+BIN_PREFIX := $(ROOT)/result/bin
 QEMU := $(BIN_PREFIX)/qemu-system-riscv64
 QEMU_IMG := $(BIN_PREFIX)/qemu-img
 APK_STATIC := apk.static
 
+# build dirs
+BUILD_DIR := $(ROOT)/result/build
+BUILD_LINUX_DIR := $(BUILD_DIR)/qemu/linux
+BUILD_LINUX_D1_DIR := $(BUILD_DIR)/d1/linux
+BUILD_UBOOT_DIR := $(BUILD_DIR)/qemu/uboot
+BUILD_UBOOT_D1_DIR := $(BUILD_DIR)/d1/uboot
+BUILD_OPENSBI_DIR := $(BUILD_DIR)/d1/opensbi
+
 export ARCH := riscv
 export CROSS_COMPILE := riscv64-linux-gnu-
-export KERNEL_PATH := $(ROOT)/deps/linux
 
 all: kernel rootfs modules
 
@@ -30,10 +37,12 @@ telnet:
 
 ## build kernel
 # https://github.com/d0u9/Linux-Device-Driver
-kernel: deps/linux/arch/riscv/boot/Image
-deps/linux/arch/riscv/boot/Image:
-	cp ./patches/linux/config ./deps/linux/.config
-	cd ./deps/linux && $(MAKE) olddefconfig && $(MAKE)
+kernel: $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
+$(BUILD_LINUX_DIR)/arch/riscv/boot/Image: KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
+$(BUILD_LINUX_DIR)/arch/riscv/boot/Image:
+	mkdir -p $(KBUILD_OUTPUT)
+	cp ./patches/linux/qemu-riscv64_config $(KBUILD_OUTPUT)/.config
+	cd ./deps/linux && export KBUILD_OUTPUT=$(KBUILD_OUTPUT) && $(MAKE) olddefconfig && $(MAKE)
 
 
 ## rootfs
@@ -110,9 +119,9 @@ $(QEMU):
 ## kernel modules (add V=12 for verbose output)
 modules: kernel
 	# build drivers only
-	# $(MAKE) -C $(KERNEL_PATH) M=$(PWD)/drivers modules
+	# $(MAKE) -C $(BUILD_LINUX_DIR) M=$(PWD)/drivers modules
 	# build drivers and user applications
-	$(MAKE) -C drivers
+	$(MAKE) -C drivers KERNEL_PATH=$(BUILD_LINUX_DIR)
 
 
 ## clean
@@ -140,11 +149,13 @@ distclean: $(CLEAN_DEPDIRS)
 ## uboot
 # https://zhuanlan.zhihu.com/p/482858701
 boot: qemu uboot
-	$(QEMU) -M virt -m 512M -nographic -bios deps/u-boot/u-boot.bin
+	$(QEMU) -M virt -m 512M -nographic -bios $(BUILD_UBOOT_DIR)/u-boot.bin
 
-uboot: deps/u-boot/u-boot.bin
-deps/u-boot/u-boot.bin:
-	cd ./deps/u-boot && $(MAKE) qemu-riscv64_defconfig && $(MAKE)
+uboot: $(BUILD_UBOOT_DIR)/u-boot.bin
+$(BUILD_UBOOT_DIR)/u-boot.bin: KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
+$(BUILD_UBOOT_DIR)/u-boot.bin:
+	mkdir -p $(KBUILD_OUTPUT)
+	cd ./deps/u-boot && export KBUILD_OUTPUT=$(KBUILD_OUTPUT) && $(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
 # 通过 u-boot 启动 kernel
 # https://quard-star-tutorial.readthedocs.io (基于qemu-riscv从0开始构建嵌入式linux系统)
@@ -154,5 +165,32 @@ deps/u-boot/u-boot.bin:
 # https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
 
 
+### d1
+d1: d1/opensbi d1/uboot d1/kernel d1/rtl8723ds
+
+## opensbi
+d1/opensbi: $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
+$(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin:
+	mkdir -p $(BUILD_OPENSBI_DIR)
+	cd ./deps/opensbi && $(MAKE) O=$(BUILD_OPENSBI_DIR) PLATFORM=generic PLATFORM_RISCV_XLEN=64
+
+d1/uboot: $(BUILD_UBOOT_D1_DIR)/u-boot-sunxi-with-spl.bin
+$(BUILD_UBOOT_D1_DIR)/u-boot-sunxi-with-spl.bin: KBUILD_OUTPUT := $(BUILD_UBOOT_D1_DIR)
+$(BUILD_UBOOT_D1_DIR)/u-boot-sunxi-with-spl.bin: $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
+	mkdir -p $(KBUILD_OUTPUT)
+	cd ./deps/uboot-d1 && export KBUILD_OUTPUT=$(KBUILD_OUTPUT) && $(MAKE) nezha_defconfig && $(MAKE) OPENSBI=$<
+
+d1/kernel: $(BUILD_LINUX_D1_DIR)/arch/riscv/boot/Image
+$(BUILD_LINUX_D1_DIR)/arch/riscv/boot/Image: KBUILD_OUTPUT := $(BUILD_LINUX_D1_DIR)
+$(BUILD_LINUX_D1_DIR)/arch/riscv/boot/Image:
+	mkdir -p $(KBUILD_OUTPUT)
+	cp ./patches/linux/lichee_rv_dock_config $(KBUILD_OUTPUT)/.config
+	cd ./deps/linux && export KBUILD_OUTPUT=$(KBUILD_OUTPUT) && $(MAKE) olddefconfig && $(MAKE)
+
+d1/rtl8723ds: deps/rtl8723ds/8723ds.ko
+deps/rtl8723ds/8723ds.ko: $(BUILD_LINUX_D1_DIR)/arch/riscv/boot/Image
+	cd ./deps/rtl8723ds && $(MAKE) KSRC=$(BUILD_LINUX_D1_DIR) modules
+
+
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules distclean clean clean/*
+.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules d1 d1/* distclean clean clean/*

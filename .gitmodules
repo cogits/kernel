@@ -10,3 +10,12 @@
 [submodule "deps/qemu"]
 	path = deps/qemu
 	url = https://github.com/qemu/qemu
+[submodule "deps/uboot-d1"]
+	path = deps/uboot-d1
+	url = git@github.com:smaeul/u-boot.git
+[submodule "deps/opensbi"]
+	path = deps/opensbi
+	url = git@github.com:riscv-software-src/opensbi.git
+[submodule "deps/rtl8723ds"]
+	path = deps/rtl8723ds
+	url = git@github.com:lwfinger/rtl8723ds.git

@@ -32,6 +32,9 @@ $ git clone --depth=1 -b v6.7 git@github.com:torvalds/linux.git
 $ git clone --depth=1 -b 1_36_1 git://git.busybox.net/busybox
 $ git clone --depth=1 -b v2024.01 git@github.com:u-boot/u-boot.git
 $ git clone --depth=1 -b v8.2.2 git@github.com:qemu/qemu.git
+$ git clone --depth=1 -b v1.4 git@github.com:riscv-software-src/opensbi.git
+$ git clone --depth=1 -b d1-2022-10-31 git@github.com:smaeul/u-boot.git uboot-d1
+$ git clone --depth=1 git@github.com:lwfinger/rtl8723ds.git
 $ git submodule update --init
 ```
 
@@ -42,3 +45,6 @@ $ git submodule update --init
 - [The Linux Kernel Module Programming Guide](https://github.com/sysprog21/lkmpg)
 - [基于qemu-riscv从0开始构建嵌入式linux系统](https://quard-star-tutorial.readthedocs.io)
 - [QEMU: Network emulation](https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack)
+- [RISC-V Archlinux D1 LicheeRV image builder](https://github.com/sehraf/d1-riscv-arch-image-builder)
+- [build debian from sources for lichee rv](https://andreas.welcomes-you.com/boot-sw-debian-risc-v-lichee-rv)
+- [opensbi 编译与运行](https://zhuanlan.zhihu.com/p/659025580)
