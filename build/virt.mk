@@ -13,6 +13,7 @@ APK_STATIC := apk.static
 
 # targets
 LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
+CHROOT_DIR := $(BUILD_DIR)/chroot_alpine
 ROOTFS_DIR := $(BUILD_DIR)/rootfs
 ROOTFS_IMAGE := $(BUILD_DIR)/rootfs.img
 BUSYBOX_INSTALL := $(DEPS_DIR)/busybox/_install
@@ -91,24 +92,30 @@ $(BUSYBOX_INSTALL):
 
 
 # requires root privileges
+# https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
 rootfs/alpine: mirror := https://mirror.tuna.tsinghua.edu.cn/alpine
-rootfs/alpine: $(ROOTFS_DIR)
+rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 	cd $(BUILD_DIR)
 	dd if=/dev/zero of=rootfs.img bs=1M count=128
 	mkfs.ext4 rootfs.img
-	sudo mount -o loop rootfs.img rootfs
-	sudo $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted \
-		-p rootfs --initdb add apk-tools coreutils busybox-extras binutils musl-utils zsh vim \
-		eza bat fd ripgrep hexyl btop fzf fzf-vim fzf-zsh-plugin zsh-syntax-highlighting \
-		zsh-autosuggestions zsh-history-substring-search
-	sudo rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
-	sudo sed -i 's|$${LOGIN}|'"/bin/zsh"'|' rootfs/etc/init.d/rcS
-	sudo sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
-	sudo sed -i 's|$${MIRROR}|'"$(mirror)"'|' rootfs/etc/apk/repositories
-	sudo umount rootfs
+	unshare --map-users=1000,0,65535 --map-groups=1000,0,65535 --setuid 0 --setgid 0 --wd $(CHROOT_DIR) \
+		$(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
+		apk-tools coreutils busybox-extras binutils musl-utils zsh vim eza bat fd ripgrep hexyl btop fzf \
+		fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search
+	fuse-ext2 -o rw+ rootfs.img rootfs
+	rsync -a $(CHROOT_DIR)/ rootfs
+	rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
+	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' rootfs/etc/init.d/rcS
+	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
+	sed -i 's|$${MIRROR}|'"$(mirror)"'|' rootfs/etc/apk/repositories
+	fusermount -u rootfs
 
 $(ROOTFS_DIR):
 	mkdir -p $@
+
+$(CHROOT_DIR):
+	mkdir -p $@
+	chmod 777 $@
 
 
 

@@ -6,6 +6,7 @@ Building linux kernel and drivers using qemu-system-riscv64.
 
 for compiling kernel, busybox and drivers:
 - gcc-riscv64-linux-gnu
+- flex/bison/bc (building kernel)
 - nfs-kernel-server
 - fuse-ext2
 - rsync
@@ -17,10 +18,12 @@ for compiling qemu:
 - libfdt-dev
 - meson
 - ninja
+- python3-venv (Python's ensurepip module)
 
 for making alpine rootfs (optional):
 - qemu-user-static (binfmt support)
 - apk.static (riscv64)
+- unshare/newuidmap (uidmap)
 
 ## Clone
 
@@ -48,3 +51,4 @@ $ git submodule update --init
 - [RISC-V Archlinux D1 LicheeRV image builder](https://github.com/sehraf/d1-riscv-arch-image-builder)
 - [build debian from sources for lichee rv](https://andreas.welcomes-you.com/boot-sw-debian-risc-v-lichee-rv)
 - [opensbi 编译与运行](https://zhuanlan.zhihu.com/p/659025580)
+- [Bootstrapping Alpine Linux without root](https://blog.brixit.nl/bootstrapping-alpine-linux-without-root)
