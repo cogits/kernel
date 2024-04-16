@@ -2,13 +2,12 @@
 .SHELLFLAGS = -ec
 
 # build dirs
-BUILD_QEMU_DIR := $(BUILD_DIR)/qemu
+BUILD_QEMU_DIR := $(BUILD_DIR)/virt/qemu
 BUILD_LINUX_DIR := $(BUILD_DIR)/virt/linux
 BUILD_UBOOT_DIR := $(BUILD_DIR)/virt/uboot
+BUILD_OUT_DIR := $(BUILD_DIR)/virt/out
 
-QEMU_RESULT := $(BUILD_QEMU_DIR)/result
-BIN_PREFIX := $(QEMU_RESULT)/bin
-QEMU := $(BIN_PREFIX)/qemu-system-riscv64
+QEMU := $(BUILD_OUT_DIR)/bin/qemu-system-riscv64
 APK_STATIC := apk.static
 
 # targets
@@ -44,12 +43,10 @@ telnet:
 ## build kernel
 # https://github.com/d0u9/Linux-Device-Driver
 kernel: $(LINUX_IMAGE)
-$(LINUX_IMAGE): KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
-$(LINUX_IMAGE):
-	mkdir -p $(KBUILD_OUTPUT)
+$(LINUX_IMAGE): export KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
+$(LINUX_IMAGE): $(BUILD_LINUX_DIR)
 	cp $(PATCHES_DIR)/linux/qemu-riscv64_config $(KBUILD_OUTPUT)/.config
 	cd $(DEPS_DIR)/linux
-	export KBUILD_OUTPUT=$(KBUILD_OUTPUT)
 	$(MAKE) olddefconfig && $(MAKE)
 
 
@@ -149,12 +146,7 @@ rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 		$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_DIR)/etc/init.d/rcS
 		$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ROOTFS_DIR)/etc/apk/repositories
 	)
-	$(SUDO) rm -rf $(CHROOT_DIR)
-
-
-$(ROOTFS_DIR) $(CHROOT_DIR):
-	mkdir -p $@
-
+	$(if $(SUDO),$(SUDO) rm -rf $(CHROOT_DIR),)
 
 
 ## build qemu
@@ -164,7 +156,7 @@ qemu: $(QEMU)
 $(QEMU):
 	mkdir -p $(BUILD_QEMU_DIR)
 	cd $(BUILD_QEMU_DIR)
-	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu,riscv64-linux-user --enable-slirp --prefix=$(QEMU_RESULT)
+	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu,riscv64-linux-user --enable-slirp --prefix=$(BUILD_OUT_DIR)
 	$(MAKE) install
 
 
@@ -197,9 +189,9 @@ clean/rootfs:
 	git reset --hard
 
 # distclean
-SUB_CLEAN := qemu kernel u-boot rootfs
-CLEAN_TARGETS := $(SUB_CLEAN:%=clean/%)
-distclean: clean $(CLEAN_TARGETS)
+distclean: clean clean/rootfs
+	rm -rf $(BUILD_DIR)/virt
+	rm -rf $(CHROOT_DIR)
 
 
 ## uboot
@@ -208,11 +200,9 @@ boot: qemu uboot
 	$(QEMU) -M virt -m 512M -nographic -bios $(UBOOT_BIN)
 
 uboot: $(UBOOT_BIN)
-$(UBOOT_BIN): KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
-$(UBOOT_BIN):
-	mkdir -p $(KBUILD_OUTPUT)
+$(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
+$(UBOOT_BIN): $(BUILD_UBOOT_DIR)
 	cd $(DEPS_DIR)/u-boot
-	export KBUILD_OUTPUT=$(KBUILD_OUTPUT)
 	$(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
 # 通过 u-boot 启动 kernel
@@ -221,6 +211,12 @@ $(UBOOT_BIN):
 # https://stdrc.cc/post/2021/02/23/u-boot-qemu-virt
 # https://blog.csdn.net/wangyijieonline/article/details/104843769
 # https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
+
+
+## 创建目录
+# NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。比如 BUILD_QEMU_DIR
+$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR) $(BUILD_LINUX_DIR):
+	mkdir -p $@
 
 
 # 声明伪目录

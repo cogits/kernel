@@ -27,8 +27,8 @@ virt/%:
 	$(MAKE) -f $(VIRT_MK) $(@:virt/%=%)
 
 # lichee rv dock platform
-d1:
-	$(MAKE) -f $(D1_MK)
+d1 image:
+	$(MAKE) -f $(D1_MK) $@
 d1/%:
 	$(MAKE) -f $(D1_MK) $(@:d1/%=%)
 
