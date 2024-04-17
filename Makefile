@@ -19,7 +19,9 @@ D1_MK := $(BUILD_DIR)/d1.mk
 all: virt
 
 # qemu `virt` generic virtual platform
-virt run telnet boot:
+virt run telnet boot rootfs:
+	$(MAKE) -f $(VIRT_MK) $@
+rootfs/%:
 	$(MAKE) -f $(VIRT_MK) $@
 virt/%:
 	$(MAKE) -f $(VIRT_MK) $(@:virt/%=%)

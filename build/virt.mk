@@ -56,6 +56,26 @@ $(LINUX_IMAGE):
 ## rootfs
 rootfs: $(ROOTFS_IMAGE)
 
+define fuse-mount
+fuse-ext2 -o rw+ $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+$(1)
+fusermount -u $(ROOTFS_DIR)
+endef
+
+define mount-loop
+$(SUDO) mount -o loop $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+$(1)
+$(SUDO) umount $(ROOTFS_DIR)
+endef
+
+define create-ext4-rootfs
+dd if=/dev/zero of=$(ROOTFS_IMAGE) bs=1M count=$(1)
+mkfs.ext4 $(ROOTFS_IMAGE)
+endef
+
+ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)
+VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
+VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
 
 ## rootfs/busybox
 # https://zhuanlan.zhihu.com/p/258394849
@@ -71,20 +91,21 @@ rootfs: $(ROOTFS_IMAGE)
 rootfs/busybox: $(ROOTFS_IMAGE)
 $(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
 	cd $(BUILD_DIR)
-	dd if=/dev/zero of=rootfs.img bs=1M count=64
-	mkfs.ext4 rootfs.img
-	fuse-ext2 -o rw+ rootfs.img rootfs
-	rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
-	sed -i 's|$${LOGIN}|'"/bin/sh"'|' rootfs/etc/init.d/rcS
-	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
-	cp -r $(BUSYBOX_INSTALL)/* rootfs
-	fusermount -u rootfs
+	$(call create-ext4-rootfs,64)
+
+	$(call fuse-mount,
+		rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
+		sed -i 's|$${LOGIN}|'"/bin/sh"'|' rootfs/etc/init.d/rcS
+		sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
+		cp -r $(BUSYBOX_INSTALL)/* rootfs
+	)
 
 $(BUSYBOX_INSTALL): DIFF_FILES := $(shell find $(PATCHES_DIR)/busybox -type f -name '*.diff')
 $(BUSYBOX_INSTALL):
 	# 找出 patches/busybox/ 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
-	$(foreach diff,$(DIFF_FILES),\
-		patch -N $(patsubst $(PATCHES_DIR)/%.diff,$(DEPS_DIR)/%,$(diff)) $(diff);)
+	$(foreach diff,$(DIFF_FILES),
+		patch -N $(patsubst $(PATCHES_DIR)/%.diff,$(DEPS_DIR)/%,$(diff)) $(diff)
+	)
 	cp $(PATCHES_DIR)/busybox/config $(DEPS_DIR)/busybox/.config
 	cd $(DEPS_DIR)/busybox
 	$(MAKE) oldconfig
@@ -92,30 +113,47 @@ $(BUSYBOX_INSTALL):
 
 
 # requires root privileges
+rootfs/alpine/root: SUDO := sudo
+rootfs/alpine/root: rootfs/alpine
+
+# rootless method
+# 由于 alpine 创建 rootfs 时会生成其他人无权限读写的文件，所以必须把 root id 映射成当前用户的 id
+# ```sh
+# $ sudo sed -i "s/$(whoami):\([0-9]\+\):/$(whoami):$(id -u):/g" /etc/subuid
+# $ sudo sed -i "s/$(whoami):\([0-9]\+\):/$(whoami):$(id -g):/g" /etc/subgid
+# ```
 # https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
-rootfs/alpine: mirror := https://mirror.tuna.tsinghua.edu.cn/alpine
+rootfs/alpine: mirror ?= https://mirror.tuna.tsinghua.edu.cn/alpine
 rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 	cd $(BUILD_DIR)
-	dd if=/dev/zero of=rootfs.img bs=1M count=128
-	mkfs.ext4 rootfs.img
-	unshare --map-users=1000,0,65535 --map-groups=1000,0,65535 --setuid 0 --setgid 0 --wd $(CHROOT_DIR) \
+	$(call create-ext4-rootfs,128)
+
+	$(if $(ROOT_USER),,$(if $(SUDO),,
+		$(if $(VALID_SUBUID),,$(error subordinate user ID must be equal to UID, see subuid))
+		$(if $(VALID_SUBGID),,$(error subordinate group ID must be equal to GID, see subgid))
+		map_users=$$(getsubids $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
+		map_groups=$$(getsubids -g $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
+		unshare_cmd="unshare --map-users=$${map_users} --map-groups=$${map_groups} --setuid 0 --setgid 0 --wd $(CHROOT_DIR)"
+	))
+
+	cd $(CHROOT_DIR)
+	$(if $(ROOT_USER),,$(if $(SUDO),$(SUDO),$${unshare_cmd})) \
 		$(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
 		apk-tools coreutils busybox-extras binutils musl-utils zsh vim eza bat fd ripgrep hexyl btop fzf \
 		fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search
-	fuse-ext2 -o rw+ rootfs.img rootfs
-	rsync -a $(CHROOT_DIR)/ rootfs
-	rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
-	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' rootfs/etc/init.d/rcS
-	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
-	sed -i 's|$${MIRROR}|'"$(mirror)"'|' rootfs/etc/apk/repositories
-	fusermount -u rootfs
 
-$(ROOTFS_DIR):
-	mkdir -p $@
+	$(call $(if $(ROOT_USER),mount-loop,$(if $(SUDO),mount-loop,fuse-mount)),
+		$(SUDO) rsync -a $(CHROOT_DIR)/ $(ROOTFS_DIR)
+		$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(ROOTFS_DIR) --exclude='.gitkeep'
+		$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_DIR)/etc/init.d/rcS
+		$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_DIR)/etc/init.d/rcS
+		$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ROOTFS_DIR)/etc/apk/repositories
+	)
+	$(SUDO) rm -rf $(CHROOT_DIR)
 
-$(CHROOT_DIR):
+
+$(ROOTFS_DIR) $(CHROOT_DIR):
 	mkdir -p $@
-	chmod 777 $@
 
 
 
