@@ -9,7 +9,6 @@ BUILD_UBOOT_DIR := $(BUILD_DIR)/virt/uboot
 QEMU_RESULT := $(BUILD_QEMU_DIR)/result
 BIN_PREFIX := $(QEMU_RESULT)/bin
 QEMU := $(BIN_PREFIX)/qemu-system-riscv64
-QEMU_IMG := $(BIN_PREFIX)/qemu-img
 APK_STATIC := apk.static
 
 # targets
@@ -54,7 +53,7 @@ $(LINUX_IMAGE):
 
 
 ## rootfs
-rootfs: rootfs/busybox
+rootfs: $(ROOTFS_IMAGE)
 
 
 ## rootfs/busybox
@@ -69,9 +68,9 @@ rootfs: rootfs/busybox
 # sudo echo '${宿主机共享目录}      127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
 rootfs/busybox: $(ROOTFS_IMAGE)
-$(ROOTFS_IMAGE): $(QEMU_IMG) $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
+$(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
 	cd $(BUILD_DIR)
-	$(QEMU_IMG) create rootfs.img 64m
+	dd if=/dev/zero of=rootfs.img bs=1M count=64
 	mkfs.ext4 rootfs.img
 	fuse-ext2 -o rw+ rootfs.img rootfs
 	rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
@@ -93,9 +92,10 @@ $(BUSYBOX_INSTALL):
 
 # requires root privileges
 rootfs/alpine: mirror := https://mirror.tuna.tsinghua.edu.cn/alpine
-rootfs/alpine: $(QEMU_IMG) $(ROOTFS_DIR)
+rootfs/alpine: $(ROOTFS_DIR)
 	cd $(BUILD_DIR)
-	$(QEMU_IMG) create rootfs.img 128m && mkfs.ext4 rootfs.img
+	dd if=/dev/zero of=rootfs.img bs=1M count=128
+	mkfs.ext4 rootfs.img
 	sudo mount -o loop rootfs.img rootfs
 	sudo $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted \
 		-p rootfs --initdb add apk-tools coreutils busybox-extras binutils musl-utils zsh vim \
@@ -114,10 +114,8 @@ $(ROOTFS_DIR):
 
 ## build qemu
 # https://zhuanlan.zhihu.com/p/258394849
-qemu: $(QEMU) $(QEMU_IMG)
 # NOTE 不要让一个文件目标信赖于一个伪目标，否则即使文件存在，也总是执行伪目标。
-# 当 $(QEMU) 生成时 $(QEMU_IMG) 也一并生成了。
-$(QEMU_IMG): $(QEMU)
+qemu: $(QEMU)
 $(QEMU):
 	mkdir -p $(BUILD_QEMU_DIR)
 	cd $(BUILD_QEMU_DIR)
