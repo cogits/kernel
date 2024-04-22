@@ -53,26 +53,32 @@ $(LINUX_IMAGE): $(BUILD_LINUX_DIR)
 ## rootfs
 rootfs: $(ROOTFS_IMAGE)
 
-define fuse-mount
-fuse-ext2 -o rw+ $(ROOTFS_IMAGE) $(ROOTFS_DIR)
-$(1)
-fusermount -u $(ROOTFS_DIR)
-endef
-
-define mount-loop
-$(SUDO) mount -o loop $(ROOTFS_IMAGE) $(ROOTFS_DIR)
-$(1)
-$(SUDO) umount $(ROOTFS_DIR)
-endef
-
-define create-ext4-rootfs
-dd if=/dev/zero of=$(ROOTFS_IMAGE) bs=1M count=$(1)
-mkfs.ext4 $(ROOTFS_IMAGE)
-endef
-
 ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)
 VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
 VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
+ALLOW_OTHER := $(shell grep '^ *user_allow_other' /etc/fuse.conf)
+
+# 'user_allow_other' should be set in /etc/fuse.conf
+define fuse-mount
+  mount_opt='rw+,allow_other,uid=0,gid=0'
+  $(if $(ALLOW_OTHER),,
+    mount_opt='rw+'
+  )
+  fuse-ext2 -o $${mount_opt} $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+  $(1)
+  fusermount -u $(ROOTFS_DIR)
+endef
+
+define mount-loop
+  $(SUDO) mount -o loop $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+  $(1)
+  $(SUDO) umount $(ROOTFS_DIR)
+endef
+
+define create-ext4-rootfs
+  dd if=/dev/zero of=$(ROOTFS_IMAGE) bs=1M count=$(1)
+  mkfs.ext4 $(ROOTFS_IMAGE)
+endef
 
 ## rootfs/busybox
 # https://zhuanlan.zhihu.com/p/258394849
