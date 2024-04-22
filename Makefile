@@ -16,7 +16,7 @@ VIRT_MK := $(BUILD_DIR)/virt.mk
 D1_MK := $(BUILD_DIR)/d1.mk
 
 
-all: virt
+all: virt d1
 
 # qemu `virt` generic virtual platform
 virt run telnet boot rootfs:

@@ -1,34 +1,20 @@
 .ONESHELL:
 .SHELLFLAGS = -ec
 
-APK_STATIC := apk.static
+all: d1
+board := d1
+include build/targets.mk
+
 mirror ?= https://mirror.tuna.tsinghua.edu.cn/alpine
 
-# build dirs
-BUILD_LINUX_DIR := $(BUILD_DIR)/d1/linux
-BUILD_UBOOT_DIR := $(BUILD_DIR)/d1/uboot
-BUILD_OPENSBI_DIR := $(BUILD_DIR)/d1/opensbi
-BUILD_OUT_DIR := $(BUILD_DIR)/d1/out
-
 # targets
-OPENSBI_BIN := $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
-LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 RTL8723DS_KO := $(BUILD_OUT_DIR)/lib/modules/$(KERNELRELEASE)/updates/8723ds.ko
 SYSTEM_IMAGE := $(BUILD_DIR)/d1_full.img
 MOUNTPOINT := $(BUILD_DIR)/chroot_alpine
 
 
-all: d1
-include build/targets.mk
-
 d1: uboot kernel modules
-
-## opensbi
-opensbi: $(OPENSBI_BIN)
-$(OPENSBI_BIN): $(BUILD_OPENSBI_DIR)
-	cd $(DEPS_DIR)/opensbi
-	$(MAKE) O=$(BUILD_OPENSBI_DIR) PLATFORM=generic PLATFORM_RISCV_XLEN=64
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
@@ -113,7 +99,7 @@ distclean: clean/ko clean/image
 
 ## 创建目录
 # NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。比如 BUILD_LINUX_DIR
-$(BUILD_OPENSBI_DIR) $(BUILD_UBOOT_DIR) $(BUILD_OUT_DIR) $(MOUNTPOINT):
+$(BUILD_UBOOT_DIR) $(MOUNTPOINT):
 	mkdir -p $@
 
 

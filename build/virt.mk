@@ -1,17 +1,14 @@
 .ONESHELL:
 .SHELLFLAGS = -ec
 
-# build dirs
-BUILD_QEMU_DIR := $(BUILD_DIR)/virt/qemu
-BUILD_LINUX_DIR := $(BUILD_DIR)/virt/linux
-BUILD_UBOOT_DIR := $(BUILD_DIR)/virt/uboot
-BUILD_OUT_DIR := $(BUILD_DIR)/virt/out
+all: virt
+board := virt
+include build/targets.mk
 
+BUILD_QEMU_DIR := $(BUILD_DIR)/$(board)/qemu
 QEMU := $(BUILD_OUT_DIR)/bin/qemu-system-riscv64
-APK_STATIC := apk.static
 
 # targets
-LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 CHROOT_DIR := $(BUILD_DIR)/chroot_alpine
 ROOTFS_DIR := $(BUILD_DIR)/rootfs
 ROOTFS_IMAGE := $(BUILD_DIR)/rootfs.img
@@ -19,15 +16,13 @@ BUSYBOX_INSTALL := $(DEPS_DIR)/busybox/_install
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
-all: virt
-include build/targets.mk
-
-virt: kernel rootfs modules
+virt: qemu kernel rootfs modules
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
-run: qemu kernel rootfs
+run: qemu kernel rootfs opensbi
 	$(QEMU) -M virt -m 512M -smp 4 -nographic \
+		-bios $(OPENSBI_BIN) \
 		-kernel $(LINUX_IMAGE) \
 		-drive file=$(ROOTFS_IMAGE),format=raw,id=hd0 \
 		-device virtio-blk-device,drive=hd0 \
