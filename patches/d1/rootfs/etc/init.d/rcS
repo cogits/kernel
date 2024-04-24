@@ -9,11 +9,20 @@ ln -sf /dev/null /dev/tty3
 ln -sf /dev/null /dev/tty4
 
 # NIC up
+ip link set lo up
+
+# usb ether adapter
 modprobe r8152
 ip link set eth0 up
 ip addr add 10.0.2.15/24 dev eth0
-ip route add default via 10.0.2.2
-ip link set lo up
+#ip route add default via 10.0.2.2
+
+# wifi
+modprobe 8723ds
+ip link set wlan0 up
+# wpa_passphrase 'ExampleWifiSSID' 'ExampleWifiPassword' > /etc/wpa_supplicant/wpa_supplicant.conf
+wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+udhcpc -i wlan0
 
 # automatic start
 

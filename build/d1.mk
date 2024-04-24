@@ -62,7 +62,7 @@ $(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	$(SUDO) $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
 		apk-tools coreutils busybox-extras binutils musl-utils zsh vim eza bat fd ripgrep hexyl btop fzf \
 		fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search \
-		tcpdump ethtool
+		tcpdump ethtool wpa_supplicant lftp
 
 	$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(MOUNTPOINT) --exclude='.gitkeep'
 	$(SUDO) rsync -av $(PATCHES_DIR)/d1/rootfs/ $(MOUNTPOINT) --exclude='.gitkeep'
