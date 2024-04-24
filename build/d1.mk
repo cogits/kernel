@@ -10,10 +10,6 @@ BUILD_UBOOT_DIR := $(BUILD_DIR)/d1/uboot
 BUILD_OPENSBI_DIR := $(BUILD_DIR)/d1/opensbi
 BUILD_OUT_DIR := $(BUILD_DIR)/d1/out
 
-# 控制 modules 安装路径
-export INSTALL_MOD_PATH := $(BUILD_OUT_DIR)
-export KERNELRELEASE ?= 6.7.0
-
 # targets
 OPENSBI_BIN := $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
@@ -22,8 +18,10 @@ RTL8723DS_KO := $(BUILD_OUT_DIR)/lib/modules/$(KERNELRELEASE)/updates/8723ds.ko
 SYSTEM_IMAGE := $(BUILD_DIR)/d1_full.img
 MOUNTPOINT := $(BUILD_DIR)/chroot_alpine
 
-### d1
+
 all: d1
+include build/targets.mk
+
 d1: uboot kernel modules
 
 ## opensbi
@@ -39,15 +37,7 @@ $(UBOOT_BIN): $(OPENSBI_BIN) $(BUILD_UBOOT_DIR)
 	$(MAKE) nezha_defconfig
 	$(MAKE) OPENSBI=$<
 
-kernel: $(LINUX_IMAGE)
-$(LINUX_IMAGE): export KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
-$(LINUX_IMAGE):
-	mkdir -p $(KBUILD_OUTPUT) $(BUILD_OUT_DIR)
-	cp $(PATCHES_DIR)/linux/lichee_rv_dock_config $(KBUILD_OUTPUT)/.config
-	cd $(DEPS_DIR)/linux
-	$(MAKE) olddefconfig
-	$(MAKE)
-	$(MAKE) modules_install
+kernel: LINUX_CONF := lichee_rv_dock_config
 
 modules: $(RTL8723DS_KO)
 
@@ -98,7 +88,7 @@ $(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	# install kernel and modules
 	$(SUDO) cp $(LINUX_IMAGE) $(MOUNTPOINT)/boot
 	$(SUDO) mkdir -p $(MOUNTPOINT)/lib
-	$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNTPOINT)/lib
+	$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNTPOINT)/lib --exclude='build'
 
 	# umount
 	$(SUDO) umount -l $(MOUNTPOINT)
@@ -106,11 +96,6 @@ $(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	$(SUDO) losetup -d $${DEVICES};
 
 # clean
-clean/kernel:
-	rm -rf $(BUILD_LINUX_DIR)
-	rm -rf $(BUILD_OUT_DIR)
-clean/uboot:
-	rm -rf $(BUILD_UBOOT_DIR)
 clean/opensbi:
 	rm -rf $(BUILD_OPENSBI_DIR)
 clean/ko:

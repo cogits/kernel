@@ -20,6 +20,8 @@ UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
 all: virt
+include build/targets.mk
+
 virt: kernel rootfs modules
 
 ## kernel
@@ -41,13 +43,7 @@ telnet:
 	telnet localhost 7023
 
 ## build kernel
-# https://github.com/d0u9/Linux-Device-Driver
-kernel: $(LINUX_IMAGE)
-$(LINUX_IMAGE): export KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
-$(LINUX_IMAGE): $(BUILD_LINUX_DIR)
-	cp $(PATCHES_DIR)/linux/qemu-riscv64_config $(KBUILD_OUTPUT)/.config
-	cd $(DEPS_DIR)/linux
-	$(MAKE) olddefconfig && $(MAKE)
+kernel: LINUX_CONF := qemu-riscv64_config
 
 
 ## rootfs
@@ -101,6 +97,7 @@ $(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
 		sed -i 's|$${LOGIN}|'"/bin/sh"'|' rootfs/etc/init.d/rcS
 		sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
 		cp -r $(BUSYBOX_INSTALL)/* rootfs
+		test -d $(BUILD_OUT_DIR)/lib/modules && rsync -av $(BUILD_OUT_DIR)/lib/modules rootfs/lib --exclude='build'
 	)
 
 $(BUSYBOX_INSTALL): DIFF_FILES := $(shell find $(PATCHES_DIR)/busybox -type f -name '*.diff')
@@ -151,6 +148,7 @@ rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 		$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_DIR)/etc/init.d/rcS
 		$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_DIR)/etc/init.d/rcS
 		$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ROOTFS_DIR)/etc/apk/repositories
+		test -d $(BUILD_OUT_DIR)/lib/modules && $(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(ROOTFS_DIR)/lib --exclude='build'
 	)
 	$(if $(SUDO),$(SUDO) rm -rf $(CHROOT_DIR),)
 
@@ -167,7 +165,7 @@ $(QEMU):
 
 
 ## kernel modules (add V=12 for verbose output)
-modules: kernel
+modules: $(LINUX_IMAGE)
 	# build drivers only
 	# $(MAKE) -C $(BUILD_LINUX_DIR) M=$(ROOT)/drivers modules
 	# build drivers and user applications
@@ -181,12 +179,6 @@ clean:
 
 clean/qemu:
 	rm -rf $(BUILD_QEMU_DIR)
-
-clean/kernel:
-	rm -rf $(BUILD_LINUX_DIR)
-
-clean/u-boot:
-	rm -rf $(BUILD_UBOOT_DIR)
 
 clean/rootfs:
 	rm -rf $(BUILD_DIR)/rootfs*
@@ -221,7 +213,7 @@ $(UBOOT_BIN): $(BUILD_UBOOT_DIR)
 
 ## 创建目录
 # NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。比如 BUILD_QEMU_DIR
-$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR) $(BUILD_LINUX_DIR):
+$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR):
 	mkdir -p $@
 
 
