@@ -25,12 +25,20 @@ rootfs/%:
 	$(MAKE) -f $(VIRT_MK) $@
 virt/%:
 	$(MAKE) -f $(VIRT_MK) $(@:virt/%=%)
+clean/virt:
+	$(MAKE) -f $(VIRT_MK) distclean
+clean/virt/%:
+	$(MAKE) -f $(VIRT_MK) clean/$(@:clean/virt/%=%)
 
 # lichee rv dock platform
 d1 image:
 	$(MAKE) -f $(D1_MK) $@
 d1/%:
 	$(MAKE) -f $(D1_MK) $(@:d1/%=%)
+clean/d1:
+	$(MAKE) -f $(D1_MK) distclean
+clean/d1/%:
+	$(MAKE) -f $(D1_MK) clean/$(@:clean/d1/%=%)
 
 # clean/xxx
 clean/%:

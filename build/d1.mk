@@ -24,7 +24,7 @@ MOUNTPOINT := $(BUILD_DIR)/chroot_alpine
 
 ### d1
 all: d1
-d1: uboot kernel rtl8723ds
+d1: uboot kernel modules
 
 ## opensbi
 opensbi: $(OPENSBI_BIN)
@@ -49,6 +49,8 @@ $(LINUX_IMAGE):
 	$(MAKE)
 	$(MAKE) modules_install
 
+modules: $(RTL8723DS_KO)
+
 rtl8723ds: $(RTL8723DS_KO)
 $(RTL8723DS_KO): export CONFIG_RTL8723DS := m
 $(RTL8723DS_KO): $(LINUX_IMAGE)
@@ -60,7 +62,7 @@ $(RTL8723DS_KO): $(LINUX_IMAGE)
 image: $(SYSTEM_IMAGE)
 $(SYSTEM_IMAGE): SUDO := sudo
 $(SYSTEM_IMAGE): PERCENT := %
-$(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE)
+$(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	cd $(BUILD_DIR)
 	# Create a suitable empty file
 	dd if=/dev/zero of=$(SYSTEM_IMAGE) bs=1M count=256
