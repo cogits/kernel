@@ -5,7 +5,8 @@ all: d1
 board := d1
 include build/targets.mk
 
-mirror ?= https://mirror.tuna.tsinghua.edu.cn/alpine
+SUDO := $(if $(ROOT_USER),,sudo)
+mirror ?= $(ALPINE_MIRROR)
 
 # targets
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
@@ -36,7 +37,6 @@ $(RTL8723DS_KO): $(LINUX_IMAGE)
 
 # image
 image: $(SYSTEM_IMAGE)
-$(SYSTEM_IMAGE): SUDO := sudo
 $(SYSTEM_IMAGE): PERCENT := %
 $(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	cd $(BUILD_DIR)
@@ -80,6 +80,15 @@ $(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
 	$(SUDO) umount -l $(MOUNTPOINT)
 	# clean up
 	$(SUDO) losetup -d $${DEVICES};
+
+
+# apk/<add|del|...>
+# param1: root=<root mount point>
+# param2: args=[args...]
+apk/%:
+	$(if $(root),,$(error sd card root partition mountpoint should be specified, e.g. root=/media/user/root))
+	$(SUDO) $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p $(root) \
+		$(@:apk/%=%) $(args)
 
 # clean
 clean/opensbi:

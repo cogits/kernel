@@ -44,7 +44,6 @@ kernel: LINUX_CONF := qemu-riscv64_config
 ## rootfs
 rootfs: $(ROOTFS_IMAGE)
 
-ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)
 VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
 VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
 ALLOW_OTHER := $(shell grep '^ *user_allow_other' /etc/fuse.conf)
@@ -109,7 +108,7 @@ $(BUSYBOX_INSTALL):
 
 
 # requires root privileges
-rootfs/alpine/root: SUDO := sudo
+rootfs/alpine/root: SUDO := $(if $(ROOT_USER),,sudo)
 rootfs/alpine/root: rootfs/alpine
 
 # rootless method
@@ -119,7 +118,7 @@ rootfs/alpine/root: rootfs/alpine
 # $ sudo sed -i "s/$(whoami):\([0-9]\+\):/$(whoami):$(id -g):/g" /etc/subgid
 # ```
 # https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
-rootfs/alpine: mirror ?= https://mirror.tuna.tsinghua.edu.cn/alpine
+rootfs/alpine: mirror ?= $(ALPINE_MIRROR)
 rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 	cd $(BUILD_DIR)
 	$(call create-ext4-rootfs,128)

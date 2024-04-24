@@ -11,6 +11,10 @@ export BUILD_DIR := $(ROOT)/build
 export ARCH := riscv
 export CROSS_COMPILE := riscv64-linux-gnu-
 
+# global variables
+export ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)
+export ALPINE_MIRROR := https://mirror.tuna.tsinghua.edu.cn/alpine
+
 # Makefiles
 VIRT_MK := $(BUILD_DIR)/virt.mk
 D1_MK := $(BUILD_DIR)/d1.mk
