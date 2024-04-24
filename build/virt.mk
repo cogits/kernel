@@ -16,7 +16,7 @@ BUSYBOX_INSTALL := $(DEPS_DIR)/busybox/_install
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
-virt: qemu kernel rootfs modules
+virt: qemu kernel busybox modules
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
@@ -95,6 +95,7 @@ $(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
 		test -d $(BUILD_OUT_DIR)/lib/modules && rsync -av $(BUILD_OUT_DIR)/lib/modules rootfs/lib --exclude='build'
 	)
 
+busybox: $(BUSYBOX_INSTALL)
 $(BUSYBOX_INSTALL): DIFF_FILES := $(shell find $(PATCHES_DIR)/busybox -type f -name '*.diff')
 $(BUSYBOX_INSTALL):
 	# 找出 patches/busybox/ 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
@@ -177,9 +178,6 @@ clean/qemu:
 
 clean/rootfs:
 	rm -rf $(BUILD_DIR)/rootfs*
-	cd $(DEPS_DIR)/busybox
-	git clean -fdx
-	git reset --hard
 
 # distclean
 distclean: clean clean/rootfs
