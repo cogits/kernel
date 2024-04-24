@@ -1,29 +1,33 @@
 # kernel
 
-Building linux kernel and drivers using qemu-system-riscv64.
+Building linux kernel and drivers for different platforms:
+- [qemu riscv64 virt](https://www.qemu.org/docs/master/system/riscv/virt.html)
+- [lichee rv dock](https://linux-sunxi.org/Sipeed_Lichee_RV)
 
 ## Dependencies
 
 for compiling kernel, busybox and drivers:
-- gcc-riscv64-linux-gnu
-- flex/bison/bc (building kernel)
-- nfs-kernel-server
-- fuse-ext2
-- rsync
-- zig cc
+- [gcc-riscv64-linux-gnu](https://packages.debian.org/sid/gcc-riscv64-linux-gnu)
+- [zig cc](https://ziglang.org/download) (building static riscv executables)
+- flex, bison, bc (building kernel)
+- swig (building uboot-d1)
 
 for compiling qemu:
+- [python3-venv](https://packages.debian.org/sid/python3-venv) (Python's ensurepip module)
 - libglib2.0-dev
-- libslirp-dev
+- libslirp-dev (networking support)
 - libfdt-dev
-- meson
-- ninja
-- python3-venv (Python's ensurepip module)
+- meson, ninja
+
+for making busybox rootfs:
+- [nfs-kernel-server](https://packages.debian.org/sid/nfs-kernel-server)
+- [fuse-ext2](https://packages.debian.org/sid/fuseext2) (user-level mount of ext2/3/4 file systems)
+- rsync (copying files)
 
 for making alpine rootfs (optional):
-- qemu-user-static (binfmt support)
-- apk.static (riscv64)
-- unshare/newuidmap (uidmap)
+- [qemu-user-static (binfmt support)](https://packages.debian.org/sid/qemu-user-static)
+- [apk.static (riscv64)](https://pkgs.alpinelinux.org/package/edge/main/riscv64/apk-tools-static)
+- unshare, [newuidmap](https://packages.debian.org/sid/uidmap)
 
 ## Clone
 
@@ -48,7 +52,8 @@ $ git submodule update --init
 - [The Linux Kernel Module Programming Guide](https://github.com/sysprog21/lkmpg)
 - [基于qemu-riscv从0开始构建嵌入式linux系统](https://quard-star-tutorial.readthedocs.io)
 - [QEMU: Network emulation](https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack)
+- [Bootstrapping Alpine Linux without root](https://blog.brixit.nl/bootstrapping-alpine-linux-without-root)
+- [在全志D1上启动操作系统](https://blog.hutao.tech/posts/boot-os-from-d1)
 - [RISC-V Archlinux D1 LicheeRV image builder](https://github.com/sehraf/d1-riscv-arch-image-builder)
 - [build debian from sources for lichee rv](https://andreas.welcomes-you.com/boot-sw-debian-risc-v-lichee-rv)
 - [opensbi 编译与运行](https://zhuanlan.zhihu.com/p/659025580)
-- [Bootstrapping Alpine Linux without root](https://blog.brixit.nl/bootstrapping-alpine-linux-without-root)
