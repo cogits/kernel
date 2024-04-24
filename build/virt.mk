@@ -76,7 +76,7 @@ define mount-loop
 endef
 
 define create-ext4-rootfs
-  dd if=/dev/zero of=$(ROOTFS_IMAGE) bs=1M count=$(1)
+  truncate -s $(1)M $(ROOTFS_IMAGE)
   mkfs.ext4 $(ROOTFS_IMAGE)
 endef
 
