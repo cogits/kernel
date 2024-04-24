@@ -14,6 +14,10 @@ bindkey '\eh' backward-char
 bindkey '\el' forward-char              # accept the suggestion
 bindkey '\ej' history-substring-search-down
 bindkey '\ek' history-substring-search-up
+bindkey "$terminfo[kcuu1]" history-substring-search-up
+bindkey "$terminfo[kcud1]" history-substring-search-down
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
 
 bindkey '\en' backward-word
 bindkey '\em' forward-word              # partially accept the suggestion
