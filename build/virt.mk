@@ -3,7 +3,7 @@
 
 all: virt
 board := virt
-include build/targets.mk
+include build/rules.mk
 
 BUILD_QEMU_DIR := $(BUILD_DIR)/$(board)/qemu
 QEMU := $(BUILD_OUT_DIR)/bin/qemu-system-riscv64
