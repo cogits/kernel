@@ -82,7 +82,7 @@ endef
 # sudo echo '${宿主机共享目录}      127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
 rootfs/busybox: $(ROOTFS_IMAGE)
-$(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) $(ROOTFS_DIR)
+$(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) | $(ROOTFS_DIR)
 	cd $(BUILD_DIR)
 	$(call create-ext4-rootfs,64)
 
@@ -119,7 +119,7 @@ rootfs/alpine/root: rootfs/alpine
 # ```
 # https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
 rootfs/alpine: mirror ?= $(ALPINE_MIRROR)
-rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
+rootfs/alpine: | $(ROOTFS_DIR) $(CHROOT_DIR)
 	cd $(BUILD_DIR)
 	$(call create-ext4-rootfs,128)
 
@@ -152,8 +152,7 @@ rootfs/alpine: $(ROOTFS_DIR) $(CHROOT_DIR)
 # https://zhuanlan.zhihu.com/p/258394849
 # NOTE 不要让一个文件目标信赖于一个伪目标，否则即使文件存在，也总是执行伪目标。
 qemu: $(QEMU)
-$(QEMU):
-	mkdir -p $(BUILD_QEMU_DIR)
+$(QEMU): | $(BUILD_QEMU_DIR)
 	cd $(BUILD_QEMU_DIR)
 	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu,riscv64-linux-user --enable-slirp --prefix=$(BUILD_OUT_DIR)
 	$(MAKE) install
@@ -191,7 +190,7 @@ boot: qemu uboot
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
-$(UBOOT_BIN): $(BUILD_UBOOT_DIR)
+$(UBOOT_BIN): | $(BUILD_UBOOT_DIR)
 	cd $(DEPS_DIR)/u-boot
 	$(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
@@ -204,8 +203,7 @@ $(UBOOT_BIN): $(BUILD_UBOOT_DIR)
 
 
 ## 创建目录
-# NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。比如 BUILD_QEMU_DIR
-$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR):
+$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR) $(BUILD_QEMU_DIR):
 	mkdir -p $@
 
 

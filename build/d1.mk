@@ -19,7 +19,7 @@ d1: uboot kernel modules
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
-$(UBOOT_BIN): $(OPENSBI_BIN) $(BUILD_UBOOT_DIR)
+$(UBOOT_BIN): $(OPENSBI_BIN) | $(BUILD_UBOOT_DIR)
 	cd $(DEPS_DIR)/uboot-d1
 	$(MAKE) nezha_defconfig
 	$(MAKE) OPENSBI=$<
@@ -38,7 +38,7 @@ $(RTL8723DS_KO): $(LINUX_IMAGE)
 # image
 image: $(SYSTEM_IMAGE)
 $(SYSTEM_IMAGE): PERCENT := %
-$(SYSTEM_IMAGE): $(MOUNTPOINT) $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO)
+$(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) | $(MOUNTPOINT)
 	cd $(BUILD_DIR)
 	# Create a suitable empty file
 	dd if=/dev/zero of=$(SYSTEM_IMAGE) bs=1M count=256
@@ -105,7 +105,6 @@ distclean: clean/ko clean/image
 
 
 ## 创建目录
-# NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。比如 BUILD_LINUX_DIR
 $(BUILD_UBOOT_DIR) $(MOUNTPOINT):
 	mkdir -p $@
 
