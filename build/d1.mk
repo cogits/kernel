@@ -91,8 +91,6 @@ apk/%:
 		$(@:apk/%=%) $(args)
 
 # clean
-clean/opensbi:
-	rm -rf $(BUILD_OPENSBI_DIR)
 clean/ko:
 	cd $(DEPS_DIR)/rtl8723ds
 	git clean -fdx

@@ -15,41 +15,44 @@ export CROSS_COMPILE := riscv64-linux-gnu-
 export ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)
 export ALPINE_MIRROR := https://mirror.tuna.tsinghua.edu.cn/alpine
 
+# args (recursive evaluated)
+arg1 = $(word 1,$(subst /, ,$@))
+arg2 = $(word 2,$(subst /, ,$@))
+arg3 = $(word 3,$(subst /, ,$@))
+
 # Makefiles
 VIRT_MK := $(BUILD_DIR)/virt.mk
 D1_MK := $(BUILD_DIR)/d1.mk
 
+# platforms
+platforms := virt d1
 
-all: virt d1
 
+all: $(platforms)
+
+## platform specific rules
 # qemu `virt` generic virtual platform
-virt run telnet boot rootfs:
+run telnet boot rootfs:
 	$(MAKE) -f $(VIRT_MK) $@
 rootfs/%:
 	$(MAKE) -f $(VIRT_MK) $@
-virt/%:
-	$(MAKE) -f $(VIRT_MK) $(@:virt/%=%)
-clean/virt:
-	$(MAKE) -f $(VIRT_MK) distclean
-clean/virt/%:
-	$(MAKE) -f $(VIRT_MK) clean/$(@:clean/virt/%=%)
 
 # lichee rv dock platform
-d1 image:
+image:
 	$(MAKE) -f $(D1_MK) $@
-d1/%:
-	$(MAKE) -f $(D1_MK) $(@:d1/%=%)
-clean/d1:
-	$(MAKE) -f $(D1_MK) distclean
-clean/d1/%:
-	$(MAKE) -f $(D1_MK) clean/$(@:clean/d1/%=%)
 
-# clean/xxx
-clean/%:
-	cd deps/$(@:clean/%=%)
-	git clean -fdx
-	git reset --hard
+## platform general rules
+# <virt|d1>
+$(platforms):
+	$(MAKE) -f $(BUILD_DIR)/$@.mk
 
+# <virt|d1>/*
+%:
+	$(if $(filter $(arg1),$(platforms)),# make $@,$(error expect <virt|d1>/*, found $@))
+	$(MAKE) -f $(BUILD_DIR)/$(arg1).mk $(subst $(arg1)/,,$@)
+
+
+## clean rules
 # distclean
 # `%` 不能单独用在右边的依赖名称中，所以必须定义变量
 DEPS := $(wildcard deps/*)
@@ -57,6 +60,27 @@ CLEAN_DEPDIRS := $(DEPS:deps/%=clean/%)
 distclean: $(CLEAN_DEPDIRS)
 	git clean -fdx .
 
+# clean/<dep>
+$(CLEAN_DEPDIRS):
+	cd deps/$(@:clean/%=%)
+	git clean -fdx
+	git reset --hard
+
+# clean/<virt|d1>
+$(addprefix clean/,$(platforms)): clean/%:
+	$(MAKE) -f $(BUILD_DIR)/$(@:clean/%=%).mk distclean
+
+# clean/<virt|d1>/*
+clean/%:
+	$(if $(filter $(arg2),$(platforms)),# clean $(arg2) $(arg3),$(error expect clean/<virt|d1>/*, found $@))
+	$(MAKE) -f $(BUILD_DIR)/$(arg2).mk clean/$(arg3)
+
+
+## update rules
+# update/<virt|d1>/*
+update/%: clean/%
+	$(MAKE) $(@:update/%=%)
+
 
 # 声明伪目录
-.PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean
+.PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/*

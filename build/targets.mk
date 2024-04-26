@@ -43,3 +43,5 @@ clean/kernel:
 	rm -rf $(INSTALL_MOD_PATH)/lib/modules
 clean/uboot:
 	rm -rf $(BUILD_UBOOT_DIR)
+clean/opensbi:
+	rm -rf $(BUILD_OPENSBI_DIR)
