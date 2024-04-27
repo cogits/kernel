@@ -3,7 +3,7 @@
 
 all: d1
 board := d1
-include build/rules.mk
+include rules.mk
 
 SUDO := $(if $(ROOT_USER),,sudo)
 mirror ?= $(ALPINE_MIRROR)

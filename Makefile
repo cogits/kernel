@@ -20,10 +20,6 @@ arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
 arg3 = $(word 3,$(subst /, ,$@))
 
-# Makefiles
-VIRT_MK := $(BUILD_DIR)/virt.mk
-D1_MK := $(BUILD_DIR)/d1.mk
-
 # platforms
 platforms := virt d1
 
@@ -33,23 +29,23 @@ all: $(platforms)
 ## platform specific rules
 # qemu `virt` generic virtual platform
 run telnet boot rootfs:
-	$(MAKE) -f $(VIRT_MK) $@
+	$(MAKE) -C $(BUILD_DIR) -f virt.mk $@
 rootfs/%:
-	$(MAKE) -f $(VIRT_MK) $@
+	$(MAKE) -C $(BUILD_DIR) -f virt.mk $@
 
 # lichee rv dock platform
 image:
-	$(MAKE) -f $(D1_MK) $@
+	$(MAKE) -C $(BUILD_DIR) -f d1.mk $@
 
 ## platform general rules
 # <virt|d1>
 $(platforms):
-	$(MAKE) -f $(BUILD_DIR)/$@.mk
+	$(MAKE) -C $(BUILD_DIR) -f $@.mk
 
 # <virt|d1>/*
 %:
 	$(if $(filter $(arg1),$(platforms)),# make $@,$(error expect <virt|d1>/*, found $@))
-	$(MAKE) -f $(BUILD_DIR)/$(arg1).mk $(subst $(arg1)/,,$@)
+	$(MAKE) -C $(BUILD_DIR) -f $(arg1).mk $(subst $(arg1)/,,$@)
 
 
 ## clean rules
@@ -67,13 +63,13 @@ $(CLEAN_DEPDIRS):
 	git reset --hard
 
 # clean/<virt|d1>
-$(addprefix clean/,$(platforms)): clean/%:
-	$(MAKE) -f $(BUILD_DIR)/$(@:clean/%=%).mk distclean
+$(addprefix clean/,$(platforms)):
+	$(MAKE) -C $(BUILD_DIR) -f $(@:clean/%=%).mk distclean
 
 # clean/<virt|d1>/*
 clean/%:
 	$(if $(filter $(arg2),$(platforms)),# clean $(arg2) $(arg3),$(error expect clean/<virt|d1>/*, found $@))
-	$(MAKE) -f $(BUILD_DIR)/$(arg2).mk clean/$(arg3)
+	$(MAKE) -C $(BUILD_DIR) -f $(arg2).mk clean/$(arg3)
 
 
 ## update rules
