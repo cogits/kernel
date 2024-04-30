@@ -9,10 +9,7 @@ BUILD_QEMU_DIR := $(BUILD_DIR)/$(board)/qemu
 QEMU := $(BUILD_OUT_DIR)/bin/qemu-system-riscv64
 
 # targets
-CHROOT_DIR := $(BUILD_DIR)/chroot_alpine
-ROOTFS_DIR := $(BUILD_DIR)/rootfs
-ROOTFS_IMAGE := $(BUILD_DIR)/rootfs.img
-BUSYBOX_INSTALL := $(DEPS_DIR)/busybox/_install
+ROOTFS_IMAGE := $(IMAGES_DIR)/rootfs.img
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
@@ -20,7 +17,7 @@ virt: qemu kernel busybox modules
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
-run: qemu kernel rootfs opensbi
+run: qemu opensbi kernel image
 	$(QEMU) -M virt -m 512M -smp 4 -nographic \
 		-bios $(OPENSBI_BIN) \
 		-kernel $(LINUX_IMAGE) \
@@ -41,28 +38,36 @@ telnet:
 kernel: LINUX_CONF := qemu-riscv64_config
 
 
-## rootfs
-rootfs: $(ROOTFS_IMAGE)
+## images [rootfs=<busybox|alpine>]
+image: $(ROOTFS_IMAGE)
 
-VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
-VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
-ALLOW_OTHER := $(shell grep '^ *user_allow_other' /etc/fuse.conf)
 
-# 'user_allow_other' should be set in /etc/fuse.conf
+# 手动判断文件是否存在
+ifneq ($(wildcard $(ROOTFS_IMAGE)),)
+else
+
+# NOTE 文件目标依赖于伪目标。即使文件存在，也总是执行伪目标。
+ifeq ($(rootfs),alpine)
+$(ROOTFS_IMAGE): image/alpine
+else
+$(ROOTFS_IMAGE): image/busybox
+endif
+
+endif
+
+
 define fuse-mount
-  mount_opt='rw+,allow_other,uid=0,gid=0'
-  $(if $(ALLOW_OTHER),,
-    mount_opt='rw+'
-  )
-  fuse-ext2 -o $${mount_opt} $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+  fuse2fs $(ROOTFS_IMAGE) $(MOUNT_POINT) -o fakeroot
   $(1)
-  fusermount -u $(ROOTFS_DIR)
+  chown -R root:root $(MOUNT_POINT)
+  fusermount -u $(MOUNT_POINT)
 endef
 
 define mount-loop
-  $(SUDO) mount -o loop $(ROOTFS_IMAGE) $(ROOTFS_DIR)
+  $(SUDO) mount -o loop $(ROOTFS_IMAGE) $(MOUNT_POINT)
   $(1)
-  $(SUDO) umount $(ROOTFS_DIR)
+  $(SUDO) chown -R root $(MOUNT_POINT)
+  $(SUDO) umount $(MOUNT_POINT)
 endef
 
 define create-ext4-rootfs
@@ -70,7 +75,7 @@ define create-ext4-rootfs
   mkfs.ext4 $(ROOTFS_IMAGE)
 endef
 
-## rootfs/busybox
+## image/busybox
 # https://zhuanlan.zhihu.com/p/258394849
 # https://wiki.debian.org/ManipulatingISOs#Loopmount_an_ISO_Without_Administrative_Privileges
 # https://manpages.debian.org/bookworm/fuseext2/fuseext2.1.en.html
@@ -81,76 +86,40 @@ endef
 # sudo apt install nfs-kernel-server
 # sudo echo '${宿主机共享目录}      127.0.0.1(insecure,rw,sync,no_root_squash)' >> /etc/exports
 # ```
-rootfs/busybox: $(ROOTFS_IMAGE)
-$(ROOTFS_IMAGE): $(BUSYBOX_INSTALL) | $(ROOTFS_DIR)
-	cd $(BUILD_DIR)
+image/busybox: $(BUSYBOX_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
+	cd $(IMAGES_DIR)
 	$(call create-ext4-rootfs,64)
 
-	$(call fuse-mount,
-		rsync -av $(PATCHES_DIR)/rootfs/ rootfs --exclude='.gitkeep'
-		sed -i 's|$${LOGIN}|'"/bin/sh"'|' rootfs/etc/init.d/rcS
-		sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' rootfs/etc/init.d/rcS
-		cp -r $(BUSYBOX_INSTALL)/* rootfs
-		test -d $(BUILD_OUT_DIR)/lib/modules && rsync -av $(BUILD_OUT_DIR)/lib/modules rootfs/lib --exclude='build'
+	$(call $(if $(ROOT_USER),mount-loop,$(if $(SUDO),mount-loop,fuse-mount)),
+		$(SUDO) rsync -a $(BUSYBOX_DIR)/ $(MOUNT_POINT)
+		test -d $(BUILD_OUT_DIR)/lib/modules && \
+			$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNT_POINT)/lib --exclude='build'
 	)
 
-busybox: $(BUSYBOX_INSTALL)
-$(BUSYBOX_INSTALL): DIFF_FILES := $(shell find $(PATCHES_DIR)/busybox -type f -name '*.diff')
-$(BUSYBOX_INSTALL):
-	# 找出 patches/busybox/ 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
-	$(foreach diff,$(DIFF_FILES),
-		patch -N $(patsubst $(PATCHES_DIR)/%.diff,$(DEPS_DIR)/%,$(diff)) $(diff)
-	)
-	cp $(PATCHES_DIR)/busybox/config $(DEPS_DIR)/busybox/.config
-	cd $(DEPS_DIR)/busybox
-	$(MAKE) oldconfig
-	$(MAKE) install
-
-
-# requires root privileges
-rootfs/alpine/root: SUDO := $(if $(ROOT_USER),,sudo)
-rootfs/alpine/root: rootfs/alpine
 
 # rootless method
-# 由于 alpine 创建 rootfs 时会生成其他人无权限读写的文件，所以必须把 root id 映射成当前用户的 id
-# ```sh
-# $ sudo sed -i "s/$(whoami):\([0-9]\+\):/$(whoami):$(id -u):/g" /etc/subuid
-# $ sudo sed -i "s/$(whoami):\([0-9]\+\):/$(whoami):$(id -g):/g" /etc/subgid
-# ```
 # https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
-rootfs/alpine: mirror ?= $(ALPINE_MIRROR)
-rootfs/alpine: | $(ROOTFS_DIR) $(CHROOT_DIR)
-	cd $(BUILD_DIR)
+image/alpine: mirror ?= $(ALPINE_MIRROR)
+image/alpine: alpine_extra_pkgs += binutils musl-utils
+image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
+	cd $(IMAGES_DIR)
 	$(call create-ext4-rootfs,128)
 
-	$(if $(ROOT_USER),,$(if $(SUDO),,
-		$(if $(VALID_SUBUID),,$(error subordinate user ID must be equal to UID, see subuid))
-		$(if $(VALID_SUBGID),,$(error subordinate group ID must be equal to GID, see subgid))
-		map_users=$$(getsubids $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
-		map_groups=$$(getsubids -g $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
-		unshare_cmd="unshare --map-users=$${map_users} --map-groups=$${map_groups} --setuid 0 --setgid 0 --wd $(CHROOT_DIR)"
-	))
-
-	cd $(CHROOT_DIR)
-	$(if $(ROOT_USER),,$(if $(SUDO),$(SUDO),$${unshare_cmd})) \
-		$(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
-		apk-tools coreutils busybox-extras binutils musl-utils zsh vim eza bat fd ripgrep hexyl btop fzf \
-		fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search
-
 	$(call $(if $(ROOT_USER),mount-loop,$(if $(SUDO),mount-loop,fuse-mount)),
-		$(SUDO) rsync -a $(CHROOT_DIR)/ $(ROOTFS_DIR)
-		$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(ROOTFS_DIR) --exclude='.gitkeep'
-		$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_DIR)/etc/init.d/rcS
-		$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_DIR)/etc/init.d/rcS
-		$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ROOTFS_DIR)/etc/apk/repositories
-		test -d $(BUILD_OUT_DIR)/lib/modules && $(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(ROOTFS_DIR)/lib --exclude='build'
+		$(SUDO) rsync -a $(ALPINE_DIR)/ $(MOUNT_POINT)
+		test -d $(BUILD_OUT_DIR)/lib/modules && \
+			$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNT_POINT)/lib --exclude='build'
 	)
-	$(if $(SUDO),$(SUDO) rm -rf $(CHROOT_DIR),)
+
+# requires root privileges
+# image/root/<busybox|alpine>
+image/root/%: SUDO := $(if $(ROOT_USER),,sudo)
+image/root/%: image/%
+	# HACK implicit rules need this line
 
 
 ## build qemu
 # https://zhuanlan.zhihu.com/p/258394849
-# NOTE 不要让一个文件目标信赖于一个伪目标，否则即使文件存在，也总是执行伪目标。
 qemu: $(QEMU)
 $(QEMU): | $(BUILD_QEMU_DIR)
 	cd $(BUILD_QEMU_DIR)
@@ -174,13 +143,12 @@ clean:
 clean/qemu:
 	rm -rf $(BUILD_QEMU_DIR)
 
-clean/rootfs:
-	rm -rf $(BUILD_DIR)/rootfs*
+clean/image:
+	rm -fv $(ROOTFS_IMAGE)
 
 # distclean
-distclean: clean clean/rootfs
+distclean: clean clean/image
 	rm -rf $(BUILD_DIR)/virt
-	rm -rf $(CHROOT_DIR)
 
 
 ## uboot
@@ -203,9 +171,9 @@ $(UBOOT_BIN): | $(BUILD_UBOOT_DIR)
 
 
 ## 创建目录
-$(ROOTFS_DIR) $(CHROOT_DIR) $(BUILD_UBOOT_DIR) $(BUILD_QEMU_DIR):
+$(BUILD_UBOOT_DIR) $(BUILD_QEMU_DIR):
 	mkdir -p $@
 
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel rootfs rootfs/* modules distclean clean clean/*
+.PHONY: all run telnet boot uboot qemu kernel image image/* modules distclean clean clean/*

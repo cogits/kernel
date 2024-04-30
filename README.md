@@ -21,7 +21,7 @@ for compiling qemu:
 
 for making busybox rootfs:
 - [nfs-kernel-server](https://packages.debian.org/sid/nfs-kernel-server)
-- [fuse-ext2](https://packages.debian.org/sid/fuseext2) (user-level mount of ext2/3/4 file systems)
+- fuse/fuse3, [fuse2fs](https://packages.debian.org/sid/fuse2fs) (user-level mount of ext2/3/4 file systems)
 - rsync (copying files)
 
 for making alpine rootfs (optional):

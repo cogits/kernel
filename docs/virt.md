@@ -1,16 +1,8 @@
 # 配置
 
-## fuse 允许更改文件 id
+## fuse 挂载
 
-fuse mount 时允许更改文件 id，需要设置：
-
-```sh
-$ cat /etc/fuse.conf
-user_allow_other
-```
-
-参考 [fuse-ext2](https://github.com/alperakcan/fuse-ext2)。
-
+fuse 挂载有时写数据太慢，需要耐心等待。
 
 
 ## opensbi 启动 kernel
@@ -28,4 +20,3 @@ qemu 指定 `-bios` 参数。实际上不指定时，默认也是 `opensbi`。
 user mode networking 模式下不支持 ICMP，其他流量是通的。
 
 参考 [Using the user mode network stack](https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack)。
-

@@ -11,8 +11,8 @@ mirror ?= $(ALPINE_MIRROR)
 # targets
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
 RTL8723DS_KO := $(BUILD_OUT_DIR)/lib/modules/$(KERNELRELEASE)/updates/8723ds.ko
-SYSTEM_IMAGE := $(BUILD_DIR)/d1_full.img
-MOUNTPOINT := $(BUILD_DIR)/chroot_alpine
+SYSTEM_IMAGE := $(IMAGES_DIR)/d1-sd.img
+ROOTFS_D1_DIR := $(ROOTFS_DIR)/d1
 
 
 d1: uboot kernel modules
@@ -37,56 +37,56 @@ $(RTL8723DS_KO): $(LINUX_IMAGE)
 
 # image
 image: $(SYSTEM_IMAGE)
-$(SYSTEM_IMAGE): PERCENT := %
-$(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) | $(MOUNTPOINT)
-	cd $(BUILD_DIR)
+$(SYSTEM_IMAGE): alpine_extra_pkgs += tcpdump ethtool lftp
+$(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROOTFS_D1_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
+	cd $(IMAGES_DIR)
 	# Create a suitable empty file
-	dd if=/dev/zero of=$(SYSTEM_IMAGE) bs=1M count=256
+	truncate -s 256M $(SYSTEM_IMAGE)
 	# Write partition table on it
 	parted -s -a optimal -- $(SYSTEM_IMAGE) mklabel gpt
 	parted -s -a optimal -- $(SYSTEM_IMAGE) mkpart primary ext2 10MiB 60MiB
-	parted -s -a optimal -- $(SYSTEM_IMAGE) mkpart primary ext4 60MiB 100$(PERCENT)
-	# Write rootfs, kernel and boot config
+	parted -s -a optimal -- $(SYSTEM_IMAGE) mkpart primary ext4 60MiB 100%
+
 	DEVICES=$$($(SUDO) losetup -f -P --show $(SYSTEM_IMAGE));
 	# Write bootloader
 	$(SUDO) dd if=$(UBOOT_BIN) of="$${DEVICES}" bs=8192 seek=16
+
 	# Creating filesystem
 	$(SUDO) mkfs.ext2 -F -L boot $${DEVICES}p1
 	$(SUDO) mkfs.ext4 -F -L root $${DEVICES}p2
 	# mount
-	$(SUDO) mount $${DEVICES}p2 $(MOUNTPOINT)
-	$(SUDO) mkdir $(MOUNTPOINT)/boot
-	$(SUDO) mount $${DEVICES}p1 $(MOUNTPOINT)/boot
-	# Writing rootfs and kernel
-	cd $(MOUNTPOINT)
-	$(SUDO) $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
-		apk-tools coreutils busybox-extras binutils musl-utils zsh vim eza bat fd ripgrep hexyl btop fzf \
-		fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search \
-		tcpdump ethtool wpa_supplicant lftp
+	$(SUDO) mount $${DEVICES}p2 $(MOUNT_POINT)
+	$(SUDO) mkdir $(MOUNT_POINT)/boot
+	$(SUDO) mount $${DEVICES}p1 $(MOUNT_POINT)/boot
 
-	$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(MOUNTPOINT) --exclude='.gitkeep'
-	$(SUDO) rsync -av $(PATCHES_DIR)/d1/rootfs/ $(MOUNTPOINT) --exclude='.gitkeep'
-	$(SUDO) cp /etc/resolv.conf $(MOUNTPOINT)/etc
-	$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(MOUNTPOINT)/etc/init.d/rcS
-	$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(MOUNTPOINT)/etc/init.d/rcS
-	$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(MOUNTPOINT)/etc/apk/repositories
+	# Copying rootfs
+	$(SUDO) rsync -a $(ALPINE_DIR)/ $(MOUNT_POINT)
+	$(SUDO) rsync -a $(ROOTFS_D1_DIR)/ $(MOUNT_POINT)
 
 	# install kernel and modules
-	$(SUDO) cp $(LINUX_IMAGE) $(MOUNTPOINT)/boot
-	$(SUDO) mkdir -p $(MOUNTPOINT)/lib
-	$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNTPOINT)/lib --exclude='build'
+	$(SUDO) cp $(LINUX_IMAGE) $(MOUNT_POINT)/boot
+	$(SUDO) mkdir -p $(MOUNT_POINT)/lib
+	$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNT_POINT)/lib --exclude='build'
 
 	# umount
-	$(SUDO) umount -l $(MOUNTPOINT)
+	$(SUDO) umount -l $(MOUNT_POINT)
 	# clean up
 	$(SUDO) losetup -d $${DEVICES};
+
+$(ROOTFS_D1_DIR):
+	mkdir -p $(ROOTFS_D1_DIR)
+	# patches/rootfs
+	rsync -av $(PATCHES_DIR)/d1/rootfs/ $(ROOTFS_D1_DIR) --exclude='.gitkeep'
+	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
+	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
+	cp /etc/resolv.conf $(ROOTFS_D1_DIR)/etc
 
 
 # apk/<add|del|...>
 # param1: root=<root mount point>
 # param2: args=[args...]
 apk/%:
-	$(if $(root),,$(error sd card root partition mountpoint should be specified, e.g. root=/media/user/root))
+	$(if $(root),,$(error sd card root partition mount point should be specified, e.g. root=/media/user/root))
 	$(SUDO) $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p $(root) \
 		$(@:apk/%=%) $(args)
 
@@ -109,11 +109,11 @@ clean/image:
 
 distclean: clean/ko clean/image
 	rm -rf $(BUILD_DIR)/d1
-	rm -rf $(MOUNTPOINT)
+	rm -rf $(MOUNT_POINT)
 
 
 ## 创建目录
-$(BUILD_UBOOT_DIR) $(MOUNTPOINT):
+$(BUILD_UBOOT_DIR):
 	mkdir -p $@
 
 
