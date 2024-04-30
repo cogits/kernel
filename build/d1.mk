@@ -21,7 +21,7 @@ uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
 $(UBOOT_BIN): $(OPENSBI_BIN) | $(BUILD_UBOOT_DIR)
 	cd $(DEPS_DIR)/uboot-d1
-	$(MAKE) nezha_defconfig
+	$(MAKE) lichee_rv_dock_defconfig
 	$(MAKE) OPENSBI=$<
 
 kernel: LINUX_CONF := lichee_rv_dock_config
@@ -89,6 +89,14 @@ apk/%:
 	$(if $(root),,$(error sd card root partition mountpoint should be specified, e.g. root=/media/user/root))
 	$(SUDO) $(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p $(root) \
 		$(@:apk/%=%) $(args)
+
+# param: dev=<device>
+flash/uboot: $(UBOOT_BIN)
+	$(if $(dev), \
+		$(if $(filter $(dev),sda nvme0n1),$(error Primary disk '/dev/$(dev)' is not allowed.),),
+		$(error Please specify an external storage device. e.g. dev=sdb)
+	)
+	$(SUDO) dd if=$(UBOOT_BIN) of=/dev/$(dev) bs=8192 seek=16
 
 # clean
 clean/ko:

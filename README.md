@@ -40,7 +40,7 @@ $ git clone --depth=1 -b 1_36_1 git://git.busybox.net/busybox
 $ git clone --depth=1 -b v2024.01 git@github.com:u-boot/u-boot.git
 $ git clone --depth=1 -b v8.2.2 git@github.com:qemu/qemu.git
 $ git clone --depth=1 -b v1.4 git@github.com:riscv-software-src/opensbi.git
-$ git clone --depth=1 -b d1-2022-10-31 git@github.com:smaeul/u-boot.git uboot-d1
+$ git clone --depth=1 -b d1-wip git@github.com:smaeul/u-boot.git uboot-d1
 $ git clone --depth=1 git@github.com:lwfinger/rtl8723ds.git
 $ git submodule update --init
 ```
