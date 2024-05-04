@@ -48,16 +48,14 @@ $(LINUX_IMAGE): | $(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH)
 
 ## build busybox
 busybox: $(BUSYBOX_DIR)
-$(BUSYBOX_DIR): DIFF_FILES := $(shell find $(PATCHES_DIR)/busybox -type f -name '*.diff')
 $(BUSYBOX_DIR): export KBUILD_OUTPUT := $(BUILD_BUSYBOX_DIR)
 $(BUSYBOX_DIR): | $(BUILD_BUSYBOX_DIR)
-$(BUSYBOX_DIR):
-	# 找出 patches/busybox/ 目录下所有 diff 文件，并打补丁到 deps/busybox 目录
-	$(foreach diff,$(DIFF_FILES),
-		patch -N $(patsubst $(PATCHES_DIR)/%.diff,$(DEPS_DIR)/%,$(diff)) $(diff)
-	)
-	cp $(PATCHES_DIR)/busybox/config $(KBUILD_OUTPUT)/.config
 	cd $(DEPS_DIR)/busybox
+	cp $(PATCHES_DIR)/busybox/config $(KBUILD_OUTPUT)/.config
+	for patch in $(PATCHES_DIR)/busybox/*.patch; do
+		git apply $${patch}
+	done
+
 	$(MAKE) oldconfig
 	$(MAKE) CONFIG_PREFIX=$(BUSYBOX_DIR) install
 
