@@ -115,14 +115,18 @@ distclean: clean clean/image
 
 ## uboot
 # https://zhuanlan.zhihu.com/p/482858701
-boot: qemu uboot
-	$(QEMU) -M virt -m 512M -nographic -bios $(UBOOT_BIN)
+boot: qemu uboot opensbi
+	$(QEMU) -M virt -m 512M -nographic \
+		-kernel $(UBOOT_BIN) \
+		-drive file=$(ROOTFS_IMAGE),format=raw,id=hd0 \
+		-device virtio-blk-device,drive=hd0 \
+		-append "root=/dev/vda rw console=ttyS0"
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
 $(UBOOT_BIN): | $(BUILD_UBOOT_DIR)
 	cd $(DEPS_DIR)/u-boot
-	$(MAKE) qemu-riscv64_defconfig && $(MAKE)
+	$(MAKE) qemu-riscv64_smode_defconfig && $(MAKE)
 
 # 通过 u-boot 启动 kernel
 # https://www.jianshu.com/p/f7d5b6ad0710
