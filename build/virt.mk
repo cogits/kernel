@@ -122,8 +122,13 @@ image/root/%: image/%
 # https://zhuanlan.zhihu.com/p/258394849
 qemu: $(QEMU)
 $(QEMU): | $(BUILD_QEMU_DIR)
+	cd $(DEPS_DIR)/qemu
+	for patch in $(PATCHES_DIR)/qemu/*.patch; do
+		git apply $${patch}
+	done
+
 	cd $(BUILD_QEMU_DIR)
-	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu,riscv64-linux-user --enable-slirp --prefix=$(BUILD_OUT_DIR)
+	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu --enable-slirp --prefix=$(BUILD_OUT_DIR)
 	$(MAKE) install
 
 
@@ -141,6 +146,7 @@ clean:
 	$(MAKE) -C $(ROOT)/drivers clean
 
 clean/qemu:
+	$(MAKE) -C $(ROOT) $@
 	rm -rf $(BUILD_QEMU_DIR)
 
 clean/image:
