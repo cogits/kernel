@@ -20,7 +20,7 @@ arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
 
 # platforms
-platforms := virt d1
+platforms := virt star d1
 CLEAN_PLATFORMS := $(addprefix clean/,$(platforms))
 UPDATE_PLATFORMS := $(addprefix update/,$(platforms))
 
@@ -70,6 +70,10 @@ $(addsuffix /%,$(CLEAN_PLATFORMS)):
 
 
 ## update rules
+$(UPDATE_PLATFORMS):
+	$(MAKE) clean/$(@:update/%=%)
+	$(MAKE) $(@:update/%=%)
+
 # update/<virt|d1>/*
 $(addsuffix /%,$(UPDATE_PLATFORMS)):
 	$(MAKE) clean/$(@:update/%=%)

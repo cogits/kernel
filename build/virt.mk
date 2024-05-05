@@ -5,9 +5,6 @@ all: virt
 board := virt
 include rules.mk
 
-BUILD_QEMU_DIR := $(BUILD_DIR)/$(board)/qemu
-QEMU := $(BUILD_OUT_DIR)/bin/qemu-system-riscv64
-
 # targets
 ROOTFS_IMAGE := $(IMAGES_DIR)/rootfs.img
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
@@ -111,25 +108,7 @@ image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 	)
 
 
-## build qemu
-# https://zhuanlan.zhihu.com/p/258394849
-qemu: $(QEMU)
-$(QEMU): | $(BUILD_QEMU_DIR)
-	cd $(DEPS_DIR)/qemu
-	for patch in $(PATCHES_DIR)/qemu/*.patch; do
-		git apply $${patch}
-	done
-
-	cd $(BUILD_QEMU_DIR)
-	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu --enable-slirp --prefix=$(BUILD_OUT_DIR)
-	$(MAKE) install
-
-
 ## clean
-clean/qemu:
-	$(MAKE) -C .. $@
-	rm -rf $(BUILD_QEMU_DIR)
-
 clean/image:
 	rm -fv $(ROOTFS_IMAGE)
 
@@ -150,15 +129,13 @@ $(UBOOT_BIN): | $(BUILD_UBOOT_DIR)
 	$(MAKE) qemu-riscv64_defconfig && $(MAKE)
 
 # 通过 u-boot 启动 kernel
-# https://quard-star-tutorial.readthedocs.io (基于qemu-riscv从0开始构建嵌入式linux系统)
 # https://www.jianshu.com/p/f7d5b6ad0710
 # https://stdrc.cc/post/2021/02/23/u-boot-qemu-virt
 # https://blog.csdn.net/wangyijieonline/article/details/104843769
-# https://dingfen.github.io/risc-v/2020/07/23/RISC-V_on_QEMU.html
 
 
 ## 创建目录
-$(BUILD_UBOOT_DIR) $(BUILD_QEMU_DIR):
+$(BUILD_UBOOT_DIR):
 	mkdir -p $@
 
 

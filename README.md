@@ -2,6 +2,7 @@
 
 Building linux kernel and drivers for different platforms:
 - [qemu riscv64 virt](https://www.qemu.org/docs/master/system/riscv/virt.html)
+- [quard star board](https://quard-star-tutorial.readthedocs.io)
 - [lichee rv dock](https://linux-sunxi.org/Sipeed_Lichee_RV)
 
 ## Dependencies
@@ -50,7 +51,6 @@ $ git submodule update --init
 - [在 QEMU 上运行 RISC-V 64 位版本的 Linux](https://zhuanlan.zhihu.com/p/258394849)
 - [Advanced examples of Linux Device Drivers](https://github.com/d0u9/Linux-Device-Driver)
 - [The Linux Kernel Module Programming Guide](https://github.com/sysprog21/lkmpg)
-- [基于qemu-riscv从0开始构建嵌入式linux系统](https://quard-star-tutorial.readthedocs.io)
 - [QEMU: Network emulation](https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack)
 - [Bootstrapping Alpine Linux without root](https://blog.brixit.nl/bootstrapping-alpine-linux-without-root)
 - [在全志D1上启动操作系统](https://blog.hutao.tech/posts/boot-os-from-d1)

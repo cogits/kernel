@@ -1,12 +1,16 @@
 .ONESHELL:
 .SHELLFLAGS = -ec
 
+# path definitions
+BOARD_DIR := $(ROOT)/boards/$(board)
+
 # build dirs
 BUILD_OUT_DIR := $(BUILD_DIR)/$(board)/out
 BUILD_UBOOT_DIR := $(BUILD_DIR)/$(board)/uboot
 BUILD_LINUX_DIR := $(BUILD_DIR)/$(board)/linux
 BUILD_OPENSBI_DIR := $(BUILD_DIR)/common/opensbi
 BUILD_BUSYBOX_DIR := $(BUILD_DIR)/common/busybox
+BUILD_QEMU_DIR := $(BUILD_DIR)/common/qemu
 
 # targets
 ROOTFS_DIR := $(BUILD_DIR)/rootfs
@@ -16,6 +20,7 @@ ALPINE_DIR := $(ROOTFS_DIR)/alpine
 IMAGES_DIR := $(BUILD_DIR)/images
 MOUNT_POINT := $(IMAGES_DIR)/mnt
 
+QEMU := $(BUILD_QEMU_DIR)/qemu-system-riscv64
 OPENSBI_BIN := $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 
@@ -32,6 +37,19 @@ export KERNELRELEASE ?= 6.7.0
 arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
 
+
+## build qemu
+# https://zhuanlan.zhihu.com/p/258394849
+qemu: $(QEMU)
+$(QEMU): | $(BUILD_QEMU_DIR)
+	cd $(DEPS_DIR)/qemu
+	for patch in $(PATCHES_DIR)/qemu/*.patch; do
+		git apply $${patch}
+	done
+
+	cd $(BUILD_QEMU_DIR)
+	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu --enable-slirp
+	$(MAKE)
 
 ## opensbi
 opensbi: $(OPENSBI_BIN)
@@ -110,29 +128,34 @@ $(ALPINE_DIR):
 	$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ALPINE_DIR)/etc/apk/repositories
 
 
-## 创建目录
-# NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。
-# 所以必须使用 [order-only-prerequisites](https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html)。
-$(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH) $(BUILD_OPENSBI_DIR) $(BUILD_BUSYBOX_DIR) $(IMAGES_DIR) $(MOUNT_POINT):
-	mkdir -p $@
-
 # clean
+clean/qemu:
+	$(MAKE) -C .. $@
+	rm -rf $(BUILD_QEMU_DIR)
+clean/opensbi:
+	rm -rf $(BUILD_OPENSBI_DIR)
+clean/kernel:
+	rm -rf $(BUILD_LINUX_DIR)
+	rm -rf $(INSTALL_MOD_PATH)/lib/modules
 clean/drivers:
 	$(MAKE) -C ../drivers clean
 $(addprefix clean/,$(SUB_DRIVERS)):
 	$(MAKE) -C ../drivers clean/$(@:clean/$(arg2)/%=%)
-clean/kernel:
-	rm -rf $(BUILD_LINUX_DIR)
-	rm -rf $(INSTALL_MOD_PATH)/lib/modules
 clean/uboot:
 	rm -rf $(BUILD_UBOOT_DIR)
-clean/opensbi:
-	rm -rf $(BUILD_OPENSBI_DIR)
 clean/busybox:
 	$(MAKE) -C .. $@
 	rm -rf $(BUILD_BUSYBOX_DIR) $(BUSYBOX_DIR)
 clean/alpine:
 	$(SUDO) rm -rf $(ALPINE_DIR)
+
+
+## 创建目录
+# NOTE 以目录作为依赖，有时候目录有可能被`更新`，导致 target 再次执行。
+# 所以必须使用 [order-only-prerequisites](https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html)。
+$(BUILD_QEMU_DIR) $(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH) $(BUILD_OPENSBI_DIR) $(BUILD_BUSYBOX_DIR) $(IMAGES_DIR) $(MOUNT_POINT):
+	mkdir -p $@
+
 
 # 声明伪目录
 .PHONY: opensbi kernel busybox alpine clean/* drivers drivers/*

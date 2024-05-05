@@ -76,7 +76,7 @@ $(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROO
 $(ROOTFS_D1_DIR):
 	mkdir -p $(ROOTFS_D1_DIR)
 	# patches/rootfs
-	rsync -av $(PATCHES_DIR)/d1/rootfs/ $(ROOTFS_D1_DIR) --exclude='.gitkeep'
+	rsync -av $(BOARD_DIR)/rootfs/ $(ROOTFS_D1_DIR) --exclude='.gitkeep'
 	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
 	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
 	cp /etc/resolv.conf $(ROOTFS_D1_DIR)/etc
@@ -97,6 +97,7 @@ flash/uboot: $(UBOOT_BIN)
 		$(error Please specify an external storage device. e.g. dev=sdb)
 	)
 	$(SUDO) dd if=$(UBOOT_BIN) of=/dev/$(dev) bs=8192 seek=16
+
 
 # clean
 clean/ko:
