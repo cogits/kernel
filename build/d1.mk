@@ -108,7 +108,7 @@ clean/image:
 	rm -fv $(SYSTEM_IMAGE)
 
 distclean: clean/ko clean/image
-	rm -rf $(BUILD_DIR)/d1
+	rm -rf d1/
 	rm -rf $(MOUNT_POINT)
 
 

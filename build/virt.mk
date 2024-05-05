@@ -137,16 +137,16 @@ modules: $(LINUX_IMAGE)
 	# build drivers only
 	# $(MAKE) -C $(BUILD_LINUX_DIR) M=$(ROOT)/drivers modules
 	# build drivers and user applications
-	$(MAKE) -C $(ROOT)/drivers KERNEL_PATH=$(BUILD_LINUX_DIR)
+	$(MAKE) -C ../drivers KERNEL_PATH=$(BUILD_LINUX_DIR)
 
 
 ## clean
 # 清理 drivers 目录
 clean:
-	$(MAKE) -C $(ROOT)/drivers clean
+	$(MAKE) -C ../drivers clean
 
 clean/qemu:
-	$(MAKE) -C $(ROOT) $@
+	$(MAKE) -C .. $@
 	rm -rf $(BUILD_QEMU_DIR)
 
 clean/image:
@@ -154,7 +154,7 @@ clean/image:
 
 # distclean
 distclean: clean clean/image
-	rm -rf $(BUILD_DIR)/virt
+	rm -rf virt/
 
 
 ## uboot

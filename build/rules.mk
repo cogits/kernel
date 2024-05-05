@@ -109,7 +109,7 @@ clean/uboot:
 clean/opensbi:
 	rm -rf $(BUILD_OPENSBI_DIR)
 clean/busybox:
-	$(MAKE) -C $(ROOT) $@
+	$(MAKE) -C .. $@
 	rm -rf $(BUILD_BUSYBOX_DIR) $(BUSYBOX_DIR)
 
 # 声明伪目录

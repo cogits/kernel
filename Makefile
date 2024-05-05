@@ -4,8 +4,8 @@
 # path definitions
 export ROOT := $(CURDIR)
 export DEPS_DIR := $(ROOT)/deps
-export PATCHES_DIR := $(ROOT)/patches
 export BUILD_DIR := $(ROOT)/build
+export PATCHES_DIR := $(ROOT)/patches
 
 # cross build environments
 export ARCH := riscv
@@ -29,23 +29,23 @@ all: $(platforms)
 ## platform specific rules
 # qemu `virt` generic virtual platform
 run telnet boot rootfs:
-	$(MAKE) -C $(BUILD_DIR) -f virt.mk $@
+	$(MAKE) -C build -f virt.mk $@
 rootfs/%:
-	$(MAKE) -C $(BUILD_DIR) -f virt.mk $@
+	$(MAKE) -C build -f virt.mk $@
 
 # lichee rv dock platform
 image:
-	$(MAKE) -C $(BUILD_DIR) -f d1.mk $@
+	$(MAKE) -C build -f d1.mk $@
 
 ## platform general rules
 # <virt|d1>
 $(platforms):
-	$(MAKE) -C $(BUILD_DIR) -f $@.mk
+	$(MAKE) -C build -f $@.mk
 
 # <virt|d1>/*
 %:
 	$(if $(filter $(arg1),$(platforms)),# make $@,$(error expect <virt|d1>/*, found $@))
-	$(MAKE) -C $(BUILD_DIR) -f $(arg1).mk $(subst $(arg1)/,,$@)
+	$(MAKE) -C build -f $(arg1).mk $(subst $(arg1)/,,$@)
 
 
 ## clean rules
@@ -64,12 +64,12 @@ $(CLEAN_DEPDIRS):
 
 # clean/<virt|d1>
 $(addprefix clean/,$(platforms)):
-	$(MAKE) -C $(BUILD_DIR) -f $(@:clean/%=%).mk distclean
+	$(MAKE) -C build -f $(@:clean/%=%).mk distclean
 
 # clean/<virt|d1>/*
 clean/%:
 	$(if $(filter $(arg2),$(platforms)),# clean $(arg2) $(arg3),$(error expect clean/<virt|d1>/*, found $@))
-	$(MAKE) -C $(BUILD_DIR) -f $(arg2).mk clean/$(arg3)
+	$(MAKE) -C build -f $(arg2).mk clean/$(arg3)
 
 
 ## update rules
