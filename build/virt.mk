@@ -99,7 +99,6 @@ image/busybox: $(BUSYBOX_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 
 # rootless method
 # https://blog.brixit.nl/bootstrapping-alpine-linux-without-root
-image/alpine: mirror ?= $(ALPINE_MIRROR)
 image/alpine: alpine_extra_pkgs += binutils musl-utils
 image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 	cd $(IMAGES_DIR)
@@ -110,12 +109,6 @@ image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 		test -d $(BUILD_OUT_DIR)/lib/modules && \
 			$(SUDO) rsync -av $(BUILD_OUT_DIR)/lib/modules $(MOUNT_POINT)/lib --exclude='build'
 	)
-
-# requires root privileges
-# image/root/<busybox|alpine>
-image/root/%: SUDO := $(if $(ROOT_USER),,sudo)
-image/root/%: image/%
-	# HACK implicit rules need this line
 
 
 ## build qemu

@@ -29,9 +29,7 @@ all: $(platforms)
 
 ## platform specific rules
 # qemu `virt` generic virtual platform
-run telnet boot rootfs:
-	$(MAKE) -C build -f virt.mk $@
-rootfs/%:
+run telnet boot:
 	$(MAKE) -C build -f virt.mk $@
 
 # lichee rv dock platform
@@ -78,5 +76,11 @@ $(addsuffix /%,$(UPDATE_PLATFORMS)):
 	$(MAKE) $(@:update/%=%)
 
 
+# execute commands using sudo
+sudo/%: export SUDO := $(if $(ROOT_USER),,sudo)
+sudo/%:
+	$(MAKE) $(@:sudo/%=%)
+
+
 # 声明伪目录
-.PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/*
+.PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/* sudo/*

@@ -88,10 +88,10 @@ $(ALPINE_DIR):
 		btop fzf fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search
 
 	# patches/rootfs
-	rsync -av $(PATCHES_DIR)/rootfs/ $(ALPINE_DIR) --exclude='.gitkeep'
-	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ALPINE_DIR)/etc/init.d/rcS
-	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ALPINE_DIR)/etc/init.d/rcS
-	sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ALPINE_DIR)/etc/apk/repositories
+	$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(ALPINE_DIR) --exclude='.gitkeep'
+	$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ALPINE_DIR)/etc/init.d/rcS
+	$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ALPINE_DIR)/etc/init.d/rcS
+	$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ALPINE_DIR)/etc/apk/repositories
 
 
 ## 创建目录
@@ -111,6 +111,8 @@ clean/opensbi:
 clean/busybox:
 	$(MAKE) -C .. $@
 	rm -rf $(BUILD_BUSYBOX_DIR) $(BUSYBOX_DIR)
+clean/alpine:
+	$(SUDO) rm -rf $(ALPINE_DIR)
 
 # 声明伪目录
 .PHONY: opensbi kernel busybox alpine clean/*
