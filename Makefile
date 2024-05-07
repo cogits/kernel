@@ -18,10 +18,11 @@ export ALPINE_MIRROR := https://mirror.tuna.tsinghua.edu.cn/alpine
 # args (recursive evaluated)
 arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
-arg3 = $(word 3,$(subst /, ,$@))
 
 # platforms
 platforms := virt d1
+CLEAN_PLATFORMS := $(addprefix clean/,$(platforms))
+UPDATE_PLATFORMS := $(addprefix update/,$(platforms))
 
 
 all: $(platforms)
@@ -43,9 +44,8 @@ $(platforms):
 	$(MAKE) -C build -f $@.mk
 
 # <virt|d1>/*
-%:
-	$(if $(filter $(arg1),$(platforms)),# make $@,$(error expect <virt|d1>/*, found $@))
-	$(MAKE) -C build -f $(arg1).mk $(subst $(arg1)/,,$@)
+$(addsuffix /%,$(platforms)):
+	$(MAKE) -C build -f $(arg1).mk $(@:$(arg1)/%=%)
 
 
 ## clean rules
@@ -63,18 +63,18 @@ $(CLEAN_DEPDIRS):
 	git reset --hard
 
 # clean/<virt|d1>
-$(addprefix clean/,$(platforms)):
+$(CLEAN_PLATFORMS):
 	$(MAKE) -C build -f $(@:clean/%=%).mk distclean
 
 # clean/<virt|d1>/*
-clean/%:
-	$(if $(filter $(arg2),$(platforms)),# clean $(arg2) $(arg3),$(error expect clean/<virt|d1>/*, found $@))
-	$(MAKE) -C build -f $(arg2).mk clean/$(arg3)
+$(addsuffix /%,$(CLEAN_PLATFORMS)):
+	$(MAKE) -C build -f $(arg2).mk clean/$(@:clean/$(arg2)/%=%)
 
 
 ## update rules
 # update/<virt|d1>/*
-update/%: clean/%
+$(addsuffix /%,$(UPDATE_PLATFORMS)):
+	$(MAKE) clean/$(@:update/%=%)
 	$(MAKE) $(@:update/%=%)
 
 
