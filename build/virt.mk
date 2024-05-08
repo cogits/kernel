@@ -13,7 +13,7 @@ ROOTFS_IMAGE := $(IMAGES_DIR)/rootfs.img
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
-virt: qemu kernel busybox modules
+virt: qemu kernel busybox drivers
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
@@ -125,19 +125,7 @@ $(QEMU): | $(BUILD_QEMU_DIR)
 	$(MAKE) install
 
 
-## kernel modules (add V=12 for verbose output)
-modules: $(LINUX_IMAGE)
-	# build drivers only
-	# $(MAKE) -C $(BUILD_LINUX_DIR) M=$(ROOT)/drivers modules
-	# build drivers and user applications
-	$(MAKE) -C ../drivers KERNEL_PATH=$(BUILD_LINUX_DIR)
-
-
 ## clean
-# 清理 drivers 目录
-clean:
-	$(MAKE) -C ../drivers clean
-
 clean/qemu:
 	$(MAKE) -C .. $@
 	rm -rf $(BUILD_QEMU_DIR)
@@ -175,4 +163,4 @@ $(BUILD_UBOOT_DIR) $(BUILD_QEMU_DIR):
 
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel image image/* modules distclean clean clean/*
+.PHONY: all run telnet boot uboot qemu kernel image image/* drivers distclean clean clean/*

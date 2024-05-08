@@ -1,6 +1,7 @@
 obj-y += hello/
 obj-y += chardev/
 obj-y += proc/
+obj-y += embed/
 obj-y += sysfs/
 obj-y += threads/
 obj-y += tasks/
@@ -10,16 +11,9 @@ obj-y += tasks/
 EXTRA_DIRS := chardev threads embed
 BUILD_EXTRA_DIRS := $(addprefix extra/,$(EXTRA_DIRS))
 
-build: build_modules $(BUILD_EXTRA_DIRS)
-
-# kernel 的 Makefile 没有单独清理 modules 的目标
-# 所以直接用 git clean 把 driver 目录多余文件全部清除
-clean:
-	git clean -fdx
-
 # build kernel modules
 # 不能用 $(PWD) 和 $(src)
-build_modules:
+build_modules: $(BUILD_EXTRA_DIRS)
 	$(MAKE) -C $(KERNEL_PATH) M=$(CURDIR) modules
 
 # build other steps
@@ -27,5 +21,16 @@ build_modules:
 $(BUILD_EXTRA_DIRS):
 	$(MAKE) -C $(@:extra/%=%)
 
+extra/%:
+	@# for make drivers/*
 
-.PHONY: build clean build_modules extra/*
+# kernel 的 Makefile 没有单独清理 modules 的目标
+# 所以直接用 git clean 把 driver 目录多余文件全部清除
+clean:
+	git clean -fdx
+
+# clean sub dirs
+clean/%:
+	git clean -fdx $(@:clean/%=%)
+
+.PHONY: build clean clean/* build_modules extra/*

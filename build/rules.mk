@@ -28,6 +28,10 @@ VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk
 export INSTALL_MOD_PATH := $(BUILD_OUT_DIR)
 export KERNELRELEASE ?= 6.7.0
 
+# args (recursive evaluated)
+arg1 = $(word 1,$(subst /, ,$@))
+arg2 = $(word 2,$(subst /, ,$@))
+
 
 ## opensbi
 opensbi: $(OPENSBI_BIN)
@@ -45,6 +49,18 @@ $(LINUX_IMAGE): | $(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH)
 	$(MAKE) olddefconfig
 	$(MAKE)
 	$(MAKE) modules_install
+
+## build drivers (add V=12 for verbose output)
+drivers: $(LINUX_IMAGE)
+	$(MAKE) -C ../drivers KERNEL_PATH=$(BUILD_LINUX_DIR)
+
+# drivers/*
+SUB_DRIVERS := $(wildcard ../drivers/*/)
+SUB_DRIVERS := $(SUB_DRIVERS:../%/=%)
+$(SUB_DRIVERS): $(LINUX_IMAGE)
+	$(MAKE) -C ../drivers extra/$(arg2) KERNEL_PATH=$(BUILD_LINUX_DIR)
+	$(MAKE) -C $(BUILD_LINUX_DIR) M=$(ROOT)/$@ modules
+
 
 ## build busybox
 busybox: $(BUSYBOX_DIR)
@@ -101,6 +117,10 @@ $(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH) $(BUILD_OPENSBI_DIR) $(BUILD_BUSYBOX_DIR)
 	mkdir -p $@
 
 # clean
+clean/drivers:
+	$(MAKE) -C ../drivers clean
+$(addprefix clean/,$(SUB_DRIVERS)):
+	$(MAKE) -C ../drivers clean/$(@:clean/$(arg2)/%=%)
 clean/kernel:
 	rm -rf $(BUILD_LINUX_DIR)
 	rm -rf $(INSTALL_MOD_PATH)/lib/modules
@@ -115,4 +135,4 @@ clean/alpine:
 	$(SUDO) rm -rf $(ALPINE_DIR)
 
 # 声明伪目录
-.PHONY: opensbi kernel busybox alpine clean/*
+.PHONY: opensbi kernel busybox alpine clean/* drivers drivers/*

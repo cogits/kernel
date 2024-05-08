@@ -1,8 +1,7 @@
 obj-m += embed_art.o
 embed_art-objs := embed.o art.o
 
-all: art.o_shipped
-	$(MAKE) -C $(KERNEL_PATH) M=$(CURDIR) modules
+blob: art.o_shipped
 
 art.o_shipped: art.txt
 	$(CROSS_COMPILE)ld -r -b binary -o $@ $<
