@@ -7,6 +7,10 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{c,h}]
+[{deps/linux/*,deps/busybox/*,deps/opensbi/*,deps/u-boot/*,deps/uboot-d1/*}]
 indent_style = tab
 tab_width = 8
+
+[drivers/**/*.{c,h}]
+indent_style = tab
+tab_width = 4
