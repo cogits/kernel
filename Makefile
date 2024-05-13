@@ -27,21 +27,12 @@ UPDATE_PLATFORMS := $(addprefix update/,$(platforms))
 
 all: $(platforms)
 
-## platform specific rules
-# qemu `virt` generic virtual platform
-run telnet boot:
-	$(MAKE) -C build -f virt.mk $@
-
-# lichee rv dock platform
-image:
-	$(MAKE) -C build -f d1.mk $@
-
-## platform general rules
-# <virt|d1>
+# <platforms>
+virt star: qemu
 $(platforms):
 	$(MAKE) -C build -f $@.mk
 
-# <virt|d1>/*
+# <platforms>/*
 $(addsuffix /%,$(platforms)):
 	$(MAKE) -C build -f $(arg1).mk $(@:$(arg1)/%=%)
 
@@ -60,11 +51,11 @@ $(CLEAN_DEPDIRS):
 	git clean -fdx
 	git reset --hard
 
-# clean/<virt|d1>
+# clean/<platforms>
 $(CLEAN_PLATFORMS):
 	$(MAKE) -C build -f $(@:clean/%=%).mk distclean
 
-# clean/<virt|d1>/*
+# clean/<platforms>/*
 $(addsuffix /%,$(CLEAN_PLATFORMS)):
 	$(MAKE) -C build -f $(arg2).mk clean/$(@:clean/$(arg2)/%=%)
 
@@ -74,7 +65,7 @@ $(UPDATE_PLATFORMS):
 	$(MAKE) clean/$(@:update/%=%)
 	$(MAKE) $(@:update/%=%)
 
-# update/<virt|d1>/*
+# update/<platforms>/*
 $(addsuffix /%,$(UPDATE_PLATFORMS)):
 	$(MAKE) clean/$(@:update/%=%)
 	$(MAKE) $(@:update/%=%)
@@ -85,6 +76,10 @@ sudo/%: export SUDO := $(if $(ROOT_USER),,sudo)
 sudo/%:
 	$(MAKE) $(@:sudo/%=%)
 
+
+## platform independent rules
+qemu opensbi busybox:
+	$(MAKE) -C build -f rules.mk $@
 
 # 声明伪目录
 .PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/* sudo/*
