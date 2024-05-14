@@ -12,6 +12,7 @@ for compiling kernel, busybox and drivers:
 - [zig cc](https://ziglang.org/download) (building static riscv executables)
 - flex, bison, bc (building kernel)
 - swig (building uboot-d1)
+- device-tree-compiler (building quard star)
 
 for compiling qemu:
 - [python3-venv](https://packages.debian.org/sid/python3-venv) (Python's ensurepip module)

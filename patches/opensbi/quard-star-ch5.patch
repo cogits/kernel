@@ -87,10 +87,10 @@ index 0000000..5beaa63
 +FW_JUMP_ADDR=0x0
 diff --git a/platform/quard_star/platform.c b/platform/quard_star/platform.c
 new file mode 100644
-index 0000000..719d581
+index 0000000..cddad4e
 --- /dev/null
 +++ b/platform/quard_star/platform.c
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,178 @@
 +/*
 + * SPDX-License-Identifier: BSD-2-Clause
 + */
@@ -266,5 +266,6 @@ index 0000000..719d581
 +	.hart_count		= SBI_HARTMASK_MAX_BITS,
 +	.hart_index2id		= quard_star_hart_index2id,
 +	.hart_stack_size	= SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,
++	.heap_size		= SBI_PLATFORM_DEFAULT_HEAP_SIZE(0),
 +	.platform_ops_addr	= (unsigned long)&platform_ops
 +};
