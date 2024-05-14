@@ -15,7 +15,7 @@ SYSTEM_IMAGE := $(IMAGES_DIR)/d1-sd.img
 ROOTFS_D1_DIR := $(ROOTFS_DIR)/d1
 
 
-d1: uboot kernel modules
+d1: image
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
@@ -24,7 +24,8 @@ $(UBOOT_BIN): $(OPENSBI_BIN) | $(BUILD_UBOOT_DIR)
 	$(MAKE) lichee_rv_dock_defconfig
 	$(MAKE) OPENSBI=$<
 
-kernel: LINUX_CONF := lichee_rv_dock_config
+## build kernel
+$(LINUX_IMAGE): LINUX_CONF := lichee_rv_dock_config
 
 modules: $(RTL8723DS_KO)
 
@@ -108,7 +109,7 @@ clean/ko:
 clean/image:
 	rm -fv $(SYSTEM_IMAGE)
 
-distclean: clean/ko clean/image
+distclean: clean/ko clean/image clean/alpine
 	rm -rf d1/
 	rm -rf $(MOUNT_POINT)
 

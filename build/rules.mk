@@ -8,7 +8,7 @@ BOARD_DIR := $(ROOT)/boards/$(board)
 BUILD_OUT_DIR := $(BUILD_DIR)/$(board)/out
 BUILD_UBOOT_DIR := $(BUILD_DIR)/$(board)/uboot
 BUILD_LINUX_DIR := $(BUILD_DIR)/$(board)/linux
-BUILD_OPENSBI_DIR := $(BUILD_DIR)/common/opensbi
+BUILD_OPENSBI_DIR ?= $(BUILD_DIR)/common/opensbi
 BUILD_BUSYBOX_DIR := $(BUILD_DIR)/common/busybox
 BUILD_QEMU_DIR := $(BUILD_DIR)/common/qemu
 
@@ -21,8 +21,8 @@ IMAGES_DIR := $(BUILD_DIR)/images
 MOUNT_POINT := $(IMAGES_DIR)/mnt
 
 QEMU := $(BUILD_QEMU_DIR)/qemu-system-riscv64
-OPENSBI_BIN := $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
+OPENSBI_BIN ?= $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 
 
 APK_STATIC := apk.static
@@ -37,25 +37,32 @@ export KERNELRELEASE ?= 6.7.0
 arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
 
+## macros
+# changes to DEPS_DIR/$(1) and applies patches from PATCHES_DIR/$(1)
+define git-apply
+  cd $(DEPS_DIR)/$(1)
+  for patch in $(PATCHES_DIR)/$(1)/*.patch; do
+    git apply $${patch}
+  done
+endef
+
 
 ## build qemu
 # https://zhuanlan.zhihu.com/p/258394849
 qemu: $(QEMU)
 $(QEMU): | $(BUILD_QEMU_DIR)
-	cd $(DEPS_DIR)/qemu
-	for patch in $(PATCHES_DIR)/qemu/*.patch; do
-		git apply $${patch}
-	done
-
+	$(call git-apply,qemu)
 	cd $(BUILD_QEMU_DIR)
 	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu --enable-slirp
 	$(MAKE)
 
 ## opensbi
 opensbi: $(OPENSBI_BIN)
+$(OPENSBI_BIN): export PLATFORM ?= generic
+$(OPENSBI_BIN): export PLATFORM_RISCV_XLEN ?= 64
 $(OPENSBI_BIN): | $(BUILD_OPENSBI_DIR)
 	cd $(DEPS_DIR)/opensbi
-	$(MAKE) O=$(BUILD_OPENSBI_DIR) PLATFORM=generic PLATFORM_RISCV_XLEN=64
+	$(MAKE) O=$(BUILD_OPENSBI_DIR)
 
 ## build kernel
 # https://github.com/d0u9/Linux-Device-Driver
@@ -84,11 +91,8 @@ $(SUB_DRIVERS): $(LINUX_IMAGE)
 busybox: $(BUSYBOX_DIR)
 $(BUSYBOX_DIR): export KBUILD_OUTPUT := $(BUILD_BUSYBOX_DIR)
 $(BUSYBOX_DIR): | $(BUILD_BUSYBOX_DIR)
-	cd $(DEPS_DIR)/busybox
+	$(call git-apply,busybox)
 	cp $(PATCHES_DIR)/busybox/config $(KBUILD_OUTPUT)/.config
-	for patch in $(PATCHES_DIR)/busybox/*.patch; do
-		git apply $${patch}
-	done
 
 	$(MAKE) oldconfig
 	$(MAKE) CONFIG_PREFIX=$(BUSYBOX_DIR) install
@@ -130,21 +134,24 @@ $(ALPINE_DIR):
 
 # clean
 clean/qemu:
-	$(MAKE) -C .. $@
+	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
 	rm -rf $(BUILD_QEMU_DIR)
+clean/uboot:
+	rm -rf $(BUILD_UBOOT_DIR)
 clean/opensbi:
+	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
 	rm -rf $(BUILD_OPENSBI_DIR)
 clean/kernel:
 	rm -rf $(BUILD_LINUX_DIR)
 	rm -rf $(INSTALL_MOD_PATH)/lib/modules
+
 clean/drivers:
 	$(MAKE) -C ../drivers clean
 $(addprefix clean/,$(SUB_DRIVERS)):
 	$(MAKE) -C ../drivers clean/$(@:clean/$(arg2)/%=%)
-clean/uboot:
-	rm -rf $(BUILD_UBOOT_DIR)
+
 clean/busybox:
-	$(MAKE) -C .. $@
+	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
 	rm -rf $(BUILD_BUSYBOX_DIR) $(BUSYBOX_DIR)
 clean/alpine:
 	$(SUDO) rm -rf $(ALPINE_DIR)

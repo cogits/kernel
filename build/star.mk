@@ -2,6 +2,9 @@
 .SHELLFLAGS = -ec
 
 board := star
+BUILD_OPENSBI_DIR := $(BUILD_DIR)/$(board)/opensbi
+OPENSBI_BIN := $(BUILD_OPENSBI_DIR)/platform/quard_star/firmware/fw_jump.bin
+
 all: $(board)
 include rules.mk
 
@@ -10,7 +13,7 @@ BOOT_IMAGE := $(IMAGES_DIR)/$(board)-fw.img
 BOOT_BIN := $(BOARD_DIR)/boot/fw.bin
 
 
-$(board): qemu image
+$(board): image
 
 # https://quard-star-tutorial.readthedocs.io/zh-cn/latest/ch4.html
 run: qemu $(BOOT_IMAGE)
@@ -24,6 +27,15 @@ $(BOOT_IMAGE): $(BOOT_BIN) | $(IMAGES_DIR)
 
 $(BOOT_BIN):
 	$(MAKE) -C $(BOARD_DIR)/boot
+
+## opensbi
+OPENSBI_QUARD_STAR_DIR := $(DEPS_DIR)/opensbi/platform/quard_star
+$(OPENSBI_BIN): | $(OPENSBI_QUARD_STAR_DIR)
+$(OPENSBI_BIN): export PLATFORM := quard_star
+
+$(OPENSBI_QUARD_STAR_DIR):
+	test -d $(OPENSBI_QUARD_STAR_DIR) && exit
+	$(call git-apply,opensbi)
 
 
 ## clean

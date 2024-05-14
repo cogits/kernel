@@ -10,7 +10,7 @@ ROOTFS_IMAGE := $(IMAGES_DIR)/rootfs.img
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot.bin
 
 
-virt: qemu kernel busybox drivers
+virt: kernel drivers image
 
 ## kernel
 # https://zhuanlan.zhihu.com/p/258394849
@@ -32,7 +32,7 @@ telnet:
 	telnet localhost 7023
 
 ## build kernel
-kernel: LINUX_CONF := qemu-riscv64_config
+$(LINUX_IMAGE): LINUX_CONF := qemu-riscv64_config
 
 
 ## images [rootfs=<busybox|alpine>]

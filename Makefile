@@ -22,13 +22,13 @@ arg2 = $(word 2,$(subst /, ,$@))
 # platforms
 platforms := virt star d1
 CLEAN_PLATFORMS := $(addprefix clean/,$(platforms))
-UPDATE_PLATFORMS := $(addprefix update/,$(platforms))
 
 
 all: $(platforms)
 
 # <platforms>
 virt star: qemu
+virt d1: opensbi
 $(platforms):
 	$(MAKE) -C build -f $@.mk
 
@@ -41,13 +41,13 @@ $(addsuffix /%,$(platforms)):
 # distclean
 # `%` 不能单独用在右边的依赖名称中，所以必须定义变量
 DEPS := $(wildcard deps/*)
-CLEAN_DEPDIRS := $(DEPS:deps/%=clean/%)
-distclean: $(CLEAN_DEPDIRS)
+CLEAN_DEPDIRS := $(addprefix clean/,$(DEPS))
+distclean: $(CLEAN_DEPDIRS) $(CLEAN_PLATFORMS)
 	git clean -fdx .
 
-# clean/<dep>
+# clean/deps/<dep>
 $(CLEAN_DEPDIRS):
-	cd deps/$(@:clean/%=%)
+	cd $(@:clean/%=%)
 	git clean -fdx
 	git reset --hard
 
@@ -61,25 +61,23 @@ $(addsuffix /%,$(CLEAN_PLATFORMS)):
 
 
 ## update rules
-$(UPDATE_PLATFORMS):
+update/%:
 	$(MAKE) clean/$(@:update/%=%)
 	$(MAKE) $(@:update/%=%)
 
-# update/<platforms>/*
-$(addsuffix /%,$(UPDATE_PLATFORMS)):
-	$(MAKE) clean/$(@:update/%=%)
-	$(MAKE) $(@:update/%=%)
-
-
-# execute commands using sudo
+## execute commands using sudo
 sudo/%: export SUDO := $(if $(ROOT_USER),,sudo)
 sudo/%:
 	$(MAKE) $(@:sudo/%=%)
 
 
 ## platform independent rules
-qemu opensbi busybox:
+COMMON_RULES := qemu opensbi busybox
+CLEAN_COMMON_RULES := $(addprefix clean/,$(COMMON_RULES))
+
+$(COMMON_RULES) $(CLEAN_COMMON_RULES):
 	$(MAKE) -C build -f rules.mk $@
+
 
 # 声明伪目录
 .PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/* sudo/*
