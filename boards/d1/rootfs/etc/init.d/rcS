@@ -4,10 +4,6 @@ mount -t proc none /proc
 mount -t sysfs none /sys
 /sbin/mdev -s
 
-ln -sf /dev/null /dev/tty2
-ln -sf /dev/null /dev/tty3
-ln -sf /dev/null /dev/tty4
-
 # NIC up
 ip link set lo up
 
