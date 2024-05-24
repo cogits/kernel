@@ -39,17 +39,15 @@ $(LINUX_IMAGE): LINUX_CONF := qemu-riscv64_config
 image: $(ROOTFS_IMAGE)
 
 
-# 手动判断文件是否存在
-ifneq ($(wildcard $(ROOTFS_IMAGE)),)
-else
-
-# NOTE 文件目标依赖于伪目标。即使文件存在，也总是执行伪目标。
+# NOTE
+# 文件目标依赖于伪目标，即使文件存在，也总是执行伪目标。
+# 所以需要手动判断文件是否存在，不存在时再动态地创建规则。
+ifeq ($(wildcard $(ROOTFS_IMAGE)),)
 ifeq ($(rootfs),alpine)
 $(ROOTFS_IMAGE): image/alpine
 else
 $(ROOTFS_IMAGE): image/busybox
 endif
-
 endif
 
 
