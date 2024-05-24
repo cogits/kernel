@@ -20,7 +20,7 @@ arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
 
 # platforms
-platforms := virt star d1
+platforms := virt star dock
 CLEAN_PLATFORMS := $(addprefix clean/,$(platforms))
 
 
@@ -28,7 +28,7 @@ all: $(platforms)
 
 # <platforms>
 virt star: qemu
-virt d1: opensbi
+virt dock: opensbi
 $(platforms):
 	$(MAKE) -C build -f $@.mk
 
@@ -80,4 +80,4 @@ $(COMMON_RULES) $(CLEAN_COMMON_RULES):
 
 
 # 声明伪目录
-.PHONY: all virt virt/* run telnet d1 d1/* clean/* distclean update/* sudo/*
+.PHONY: all $(platforms) virt/* star/* dock/* distclean clean/* update/* sudo/*

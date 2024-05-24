@@ -1,8 +1,8 @@
 .ONESHELL:
 .SHELLFLAGS = -ec
 
-all: d1
-board := d1
+board := dock
+all: $(board)
 include rules.mk
 
 SUDO := $(if $(ROOT_USER),,sudo)
@@ -11,11 +11,11 @@ mirror ?= $(ALPINE_MIRROR)
 # targets
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
 RTL8723DS_KO := $(BUILD_OUT_DIR)/lib/modules/$(KERNELRELEASE)/updates/8723ds.ko
-SYSTEM_IMAGE := $(IMAGES_DIR)/d1-sd.img
-ROOTFS_D1_DIR := $(ROOTFS_DIR)/d1
+SYSTEM_IMAGE := $(IMAGES_DIR)/dock-sd.img
+ROOTFS_DOCK_DIR := $(ROOTFS_DIR)/dock
 
 
-d1: image
+$(board): image
 
 uboot: $(UBOOT_BIN)
 $(UBOOT_BIN): export KBUILD_OUTPUT := $(BUILD_UBOOT_DIR)
@@ -39,7 +39,7 @@ $(RTL8723DS_KO): $(LINUX_IMAGE)
 # image
 image: $(SYSTEM_IMAGE)
 $(SYSTEM_IMAGE): alpine_extra_pkgs += tcpdump ethtool lftp
-$(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROOTFS_D1_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
+$(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROOTFS_DOCK_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 	cd $(IMAGES_DIR)
 	# Create a suitable empty file
 	truncate -s 256M $(SYSTEM_IMAGE)
@@ -62,7 +62,7 @@ $(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROO
 
 	# Copying rootfs
 	$(SUDO) rsync -a $(ALPINE_DIR)/ $(MOUNT_POINT)
-	$(SUDO) rsync -a $(ROOTFS_D1_DIR)/ $(MOUNT_POINT)
+	$(SUDO) rsync -a $(ROOTFS_DOCK_DIR)/ $(MOUNT_POINT)
 
 	# install kernel and modules
 	$(SUDO) cp $(LINUX_IMAGE) $(MOUNT_POINT)/boot
@@ -74,13 +74,13 @@ $(SYSTEM_IMAGE): $(UBOOT_BIN) $(LINUX_IMAGE) $(RTL8723DS_KO) $(ALPINE_DIR) $(ROO
 	# clean up
 	$(SUDO) losetup -d $${DEVICES};
 
-$(ROOTFS_D1_DIR):
-	mkdir -p $(ROOTFS_D1_DIR)
+$(ROOTFS_DOCK_DIR):
+	mkdir -p $@
 	# patches/rootfs
-	rsync -av $(BOARD_DIR)/rootfs/ $(ROOTFS_D1_DIR) --exclude='.gitkeep'
-	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
-	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ROOTFS_D1_DIR)/etc/init.d/rcS
-	cp /etc/resolv.conf $(ROOTFS_D1_DIR)/etc
+	rsync -av $(BOARD_DIR)/rootfs/ $@ --exclude='.gitkeep'
+	sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $@/etc/init.d/rcS
+	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $@/etc/init.d/rcS
+	cp /etc/resolv.conf $@/etc
 
 
 # apk/<add|del|...>
@@ -110,7 +110,7 @@ clean/image:
 	rm -fv $(SYSTEM_IMAGE)
 
 distclean: clean/ko clean/image clean/alpine
-	rm -rf d1/
+	rm -rf dock/
 	rm -rf $(MOUNT_POINT)
 
 
@@ -120,4 +120,4 @@ $(BUILD_UBOOT_DIR):
 
 
 # 声明伪目录
-.PHONY: all boot uboot qemu kernel rootfs rootfs/* modules d1 d1/* distclean clean clean/*
+.PHONY: all $(board) uboot kernel modules rtl8723ds image apk/% flash/uboot clean clean/* distclean
