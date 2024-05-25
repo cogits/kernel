@@ -10,15 +10,18 @@ include rules.mk
 
 # targets
 BOOT_IMAGE := $(IMAGES_DIR)/$(board)-fw.img
-BOOT_BIN := $(BOARD_DIR)/boot/fw.bin
+BOOT_BIN := $(BOARD_DIR)/domain/linux/fw.bin
+TRUSTED_BIN := $(BOARD_DIR)/domain/rtos/fw.bin
 SBI_DTB := $(BOARD_DIR)/dts/sbi.dtb
 
 
 $(board): image
 
-# https://quard-star-tutorial.readthedocs.io/zh-cn/latest/ch6.html
+DEFAULT_VC := 1366x768
+# https://quard-star-tutorial.readthedocs.io/zh-cn/latest/ch7.html
 run: qemu $(BOOT_IMAGE)
-	$(QEMU) -M $(board) -m 64m -smp 1 -nographic $(QEMUOPTS) \
+	$(QEMU) -M $(board) -m 1g -smp 4 -parallel none $(QEMUOPTS) \
+		-serial vc:$(DEFAULT_VC) -serial vc:$(DEFAULT_VC) -serial vc:$(DEFAULT_VC) -monitor vc:$(DEFAULT_VC) \
 		-drive if=pflash,bus=0,unit=0,format=raw,file=$(BOOT_IMAGE)
 
 # gdb-multiarch -q -n -x boards/star/.gdbinit
@@ -28,14 +31,15 @@ gdb: run
 
 ## image
 image: $(BOOT_IMAGE)
-$(BOOT_IMAGE): $(BOOT_BIN) $(SBI_DTB) $(OPENSBI_BIN) | $(IMAGES_DIR)
+$(BOOT_IMAGE): $(BOOT_BIN) $(TRUSTED_BIN) $(SBI_DTB) $(OPENSBI_BIN) | $(IMAGES_DIR)
 	truncate -s 32M $@
 	dd of=$@ bs=1k conv=notrunc seek=0 if=$(BOOT_BIN)
 	dd of=$@ bs=1k conv=notrunc seek=512 if=$(SBI_DTB)
 	dd of=$@ bs=1k conv=notrunc seek=2K if=$(OPENSBI_BIN)
+	dd of=$@ bs=1k conv=notrunc seek=4K if=$(TRUSTED_BIN)
 
-$(BOOT_BIN):
-	$(MAKE) -C $(BOARD_DIR)/boot
+$(BOOT_BIN) $(TRUSTED_BIN) &:
+	$(MAKE) -C $(BOARD_DIR)/domain
 
 $(SBI_DTB): %.dtb: %.dts
 	dtc -I dts -O dtb -o $@ $<
