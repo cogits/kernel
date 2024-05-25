@@ -95,12 +95,13 @@ $(BUSYBOX_DIR): | $(BUILD_BUSYBOX_DIR)
 	cp $(PATCHES_DIR)/busybox/config $(KBUILD_OUTPUT)/.config
 
 	$(MAKE) oldconfig
-	$(MAKE) CONFIG_PREFIX=$(BUSYBOX_DIR) install
+	$(MAKE) CONFIG_PREFIX=$@ install
 
-	# patch/rootfs
-	rsync -av $(PATCHES_DIR)/rootfs/ $(BUSYBOX_DIR) --exclude='.gitkeep'
-	sed -i 's|$${LOGIN}|'"/bin/sh"'|' $(BUSYBOX_DIR)/etc/init.d/rcS
-	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(BUSYBOX_DIR)/etc/init.d/rcS
+	# patches/rootfs
+	rsync -av $(PATCHES_DIR)/rootfs/ $@ --exclude='.gitkeep'
+	sed -i 's|$${LOGIN}|'"/bin/sh"'|' $@/etc/init.d/rcS $@/etc/inittab
+	sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $@/etc/fstab
+	cp /etc/localtime $@/etc
 
 
 ## create alpine rootfs
@@ -115,21 +116,22 @@ $(ALPINE_DIR):
 		$(if $(VALID_SUBGID),,$(error subordinate group ID must be equal to GID, see subgid))
 		map_users=$$(getsubids $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
 		map_groups=$$(getsubids -g $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
-		unshare="unshare --map-users=$${map_users} --map-groups=$${map_groups} --setuid 0 --setgid 0 --wd $(ALPINE_DIR)"
+		unshare="unshare --map-users=$${map_users} --map-groups=$${map_groups} --setuid 0 --setgid 0 --wd $@"
 	))
 
-	mkdir -p $(ALPINE_DIR)
-	cd $(ALPINE_DIR)
+	mkdir -p $@
+	cd $@
 	$(if $(ROOT_USER),,$(if $(SUDO),$(SUDO),$${unshare})) \
 		$(APK_STATIC) -X $(mirror)/edge/main -X $(mirror)/edge/community -U --allow-untrusted -p . --initdb add \
-		apk-tools $(alpine_extra_pkgs) coreutils busybox-extras zsh vim eza bat fd ripgrep hexyl wpa_supplicant \
-		btop fzf fzf-vim fzf-zsh-plugin zsh-syntax-highlighting zsh-autosuggestions zsh-history-substring-search
+		apk-tools $(alpine_extra_pkgs) coreutils busybox-extras zsh vim eza fd ripgrep hexyl wpa_supplicant btop \
+		fzf fzf-vim fzf-zsh-plugin zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
 
 	# patches/rootfs
-	$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $(ALPINE_DIR) --exclude='.gitkeep'
-	$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $(ALPINE_DIR)/etc/init.d/rcS
-	$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $(ALPINE_DIR)/etc/init.d/rcS
-	$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $(ALPINE_DIR)/etc/apk/repositories
+	$(SUDO) rsync -av $(PATCHES_DIR)/rootfs/ $@ --exclude='.gitkeep'
+	$(SUDO) sed -i 's|$${LOGIN}|'"/bin/zsh"'|' $@/etc/init.d/rcS $@/etc/inittab
+	$(SUDO) sed -i 's|$${HOST_PATH}|'"$(ROOT)/drivers"'|' $@/etc/fstab
+	$(SUDO) sed -i 's|$${MIRROR}|'"$(mirror)"'|' $@/etc/apk/repositories
+	$(SUDO) cp /etc/localtime $@/etc
 
 
 # clean

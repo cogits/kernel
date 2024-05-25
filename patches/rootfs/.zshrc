@@ -2,6 +2,9 @@
 TERM=xterm-256color
 
 # plugins {{{1
+ZSH_AUTOSUGGEST_MANUAL_REBIND=true
+ZSH_AUTOSUGGEST_HISTORY_IGNORE="(cd|ls) *"
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
@@ -79,7 +82,6 @@ alias ls='eza -s Name --group-directories-first'
 alias ll='ls -lh --no-user'
 alias la='ls -a'
 
-alias cat='bat'
 alias tree='eza -T'
 alias btop='btop --utf-force'
 alias readelf='readelf -W'

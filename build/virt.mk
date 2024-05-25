@@ -22,8 +22,6 @@ run: qemu opensbi kernel image
 		-device virtio-blk-device,drive=hd0 \
 		-netdev user,id=host_net0,hostfwd=tcp::7023-:23 \
 		-device e1000,mac=52:54:00:12:34:50,netdev=host_net0 \
-		-netdev user,id=host_net1 \
-		-device e1000,mac=52:54:00:12:34:56,netdev=host_net1 \
 		-append "root=/dev/vda rw console=ttyS0"
 
 ## telnet

@@ -12,7 +12,7 @@ mirror ?= $(ALPINE_MIRROR)
 UBOOT_BIN := $(BUILD_UBOOT_DIR)/u-boot-sunxi-with-spl.bin
 RTL8723DS_KO := $(BUILD_OUT_DIR)/lib/modules/$(KERNELRELEASE)/updates/8723ds.ko
 SYSTEM_IMAGE := $(IMAGES_DIR)/dock-sd.img
-ROOTFS_DOCK_DIR := $(ROOTFS_DIR)/dock
+ROOTFS_DOCK_DIR := $(ROOTFS_DIR)/$(board)
 
 
 $(board): image
@@ -110,8 +110,7 @@ clean/image:
 	rm -fv $(SYSTEM_IMAGE)
 
 distclean: clean/ko clean/image clean/alpine
-	rm -rf dock/
-	rm -rf $(MOUNT_POINT)
+	rm -rf $(board) $(ROOTFS_DOCK_DIR) $(MOUNT_POINT)
 
 
 ## 创建目录

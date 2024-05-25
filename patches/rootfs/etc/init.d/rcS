@@ -1,22 +1,20 @@
 #!/bin/sh
 
-mount -t proc none /proc
-mount -t sysfs none /sys
+mount sysfs
 /sbin/mdev -s
 
 # NIC up
+ip link set lo up
 ip link set eth0 up
 ip addr add 10.0.2.15/24 dev eth0
 ip route add default via 10.0.2.2
-ip link set lo up
-ip link set eth1 up
 
-# automatic start
+# mount all
+mkdir dev/pts
+mount -a
 
 # telnet
-mkdir dev/pts
-mount -t devpts devpts /dev/pts
 telnetd -l ${LOGIN} &
 
-# nfs
-mount -t nfs -o nolock HOST_MACHINE:${HOST_PATH} /mnt
+# mount nfs
+mount /mnt

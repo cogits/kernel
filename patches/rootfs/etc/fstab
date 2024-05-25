@@ -5,7 +5,5 @@ sysfs           /sys                sysfs           defaults                0   
 mdev            /dev                ramfs           defaults                0       0
 devpts          /dev/pts            devpts          defaults                0       0
 debugfs         /sys/kernel/debug   debugfs         defaults                0       0
-LABEL=boot      /boot               ext2            rw,defaults,noatime     0       1
-LABEL=root      /                   ext4            rw,defaults,noatime     0       2
 
 HOST_MACHINE:${HOST_PATH}   /mnt    nfs     nolock  0       0
