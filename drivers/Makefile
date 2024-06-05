@@ -22,8 +22,8 @@ build_modules: $(BUILD_EXTRA_DIRS)
 $(BUILD_EXTRA_DIRS):
 	$(MAKE) -C $(@:extra/%=%)
 
-extra/%:
-	@# for make drivers/*
+# empty recipes
+extra/%: ;
 
 # kernel 的 Makefile 没有单独清理 modules 的目标
 # 所以直接用 git clean 把 driver 目录多余文件全部清除
