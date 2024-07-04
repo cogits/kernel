@@ -54,10 +54,15 @@ $(OPENSBI_QUARD_STAR_DIR):
 clean/image:
 	rm -fv $(BOOT_IMAGE)
 
-# distclean
-distclean: clean/image
+clean: clean/image
 	git clean -fdx $(BOARD_DIR)
 
+## help
+help:
+	@
+	printf $(help_fmt) "  run"      "run $(board) platform using QEMU"
+	printf $(help_fmt) "  gdb"      "start GNU Debugger for $(board) platform"
+	printf $(help_fmt) "  opensbi"  "build opensbi"
 
 # 声明伪目录
-.PHONY: all run $(board) image distclean clean/*
+.PHONY: all run $(board) image clean clean/* help

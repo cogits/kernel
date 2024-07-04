@@ -108,8 +108,7 @@ image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 clean/image:
 	rm -fv $(ROOTFS_IMAGE)
 
-# distclean
-distclean: clean clean/image
+clean: clean clean/image
 	rm -rf virt/
 
 
@@ -134,6 +133,20 @@ $(UBOOT_BIN): | $(BUILD_UBOOT_DIR)
 $(BUILD_UBOOT_DIR):
 	mkdir -p $@
 
+## help
+help:
+	@
+	printf $(help_fmt) "  image/busybox"    "build busybox image (default)"
+	printf $(help_fmt) "  image/alpine"     "build alpine image"
+	printf $(help_fmt) "  run"              "run $(board) platform using QEMU"
+	printf $(help_fmt) "  kernel"           "build linux kernel"
+	printf $(help_fmt) "  kernel/config"    "configure linux kernel"
+	printf $(help_fmt) "  drivers"          "build all drivers"
+	printf $(help_fmt) "  drivers/<subdir>" "build drivers in:"
+	$(foreach d,$(SUB_DRIVERS),
+		printf $(help_fmt_name) "    $(d:drivers/%=%)"
+	)
+
 
 # 声明伪目录
-.PHONY: all run telnet boot uboot qemu kernel image image/* drivers distclean clean clean/*
+.PHONY: all run telnet boot uboot qemu kernel image image/* drivers clean clean/* help

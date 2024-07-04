@@ -110,7 +110,7 @@ clean/ko:
 clean/image:
 	rm -fv $(SYSTEM_IMAGE)
 
-distclean: clean/ko clean/image clean/alpine
+clean: clean/ko clean/image clean/alpine
 	rm -rf $(board) $(ROOTFS_DOCK_DIR) $(MOUNT_POINT)
 
 
@@ -118,6 +118,15 @@ distclean: clean/ko clean/image clean/alpine
 $(BUILD_UBOOT_DIR):
 	mkdir -p $@
 
+## help
+help:
+	@
+	printf $(help_fmt) "  uboot"            "build U-Boot"
+	printf $(help_fmt) "  kernel"           "build linux kernel"
+	printf $(help_fmt) "  kernel/config"    "configure linux kernel"
+	printf $(help_fmt) "  modules"          "build kernel modules"
+	printf $(help_fmt) "  apk/<cmd>"        "run APK command to manage alpine packages"
+	printf $(help_fmt) "  flash/uboot"      "burn U-Boot onto the SD card"
 
 # 声明伪目录
-.PHONY: all $(board) uboot kernel modules rtl8723ds image apk/% flash/uboot clean clean/* distclean
+.PHONY: all $(board) uboot kernel modules rtl8723ds image apk/% flash/uboot clean clean/* help
