@@ -7,7 +7,7 @@ user: ioctl1-riscv64 ioctl2-riscv64
 
 # userspace cmd for ioctl1.ko
 ioctl1-riscv64: user/ioctl1.c
-	zig cc --target=riscv64-linux -Os $^ -o $@
+	$(CROSS_COMPILE)gcc -static -Os $^ -o $@
 
 # TODO introduce compat_ioctl
 # ioctl1-riscv32: user/ioctl1.c
@@ -15,4 +15,4 @@ ioctl1-riscv64: user/ioctl1.c
 
 # userspace cmd for ioctl2.ko
 ioctl2-riscv64: user/ioctl2.c
-	zig cc --target=riscv64-linux -Os $^ -o $@
+	$(CROSS_COMPILE)gcc -static -Os $^ -o $@

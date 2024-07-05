@@ -9,7 +9,6 @@ Building linux kernel and drivers for different platforms:
 
 for compiling kernel, busybox and drivers:
 - [gcc-riscv64-linux-gnu](https://packages.debian.org/sid/gcc-riscv64-linux-gnu)
-- [zig cc](https://ziglang.org/download) (building static riscv executables)
 - flex, bison, bc (building kernel)
 - swig (building uboot-d1)
 - device-tree-compiler (building quard star)

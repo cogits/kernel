@@ -4,7 +4,7 @@ obj-m += completion/
 user: cat_nonblock
 
 cat_nonblock: user/cat_nonblock.c
-	zig cc --target=riscv64-linux -Os $^ -o $@
+	$(CROSS_COMPILE)gcc -static -Os $^ -o $@
 
 
 .PHONY: user
