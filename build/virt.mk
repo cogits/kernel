@@ -30,7 +30,7 @@ telnet:
 	telnet localhost 7023
 
 ## build kernel
-$(LINUX_IMAGE): LINUX_CONF := qemu-riscv64_config
+$(LINUX_IMAGE) kernel/config: LINUX_CONF := qemu-riscv64_config
 
 
 ## images [rootfs=<busybox|alpine>]

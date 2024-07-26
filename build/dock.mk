@@ -25,7 +25,8 @@ $(UBOOT_BIN): $(OPENSBI_BIN) | $(BUILD_UBOOT_DIR)
 	$(MAKE) OPENSBI=$<
 
 ## build kernel
-$(LINUX_IMAGE): LINUX_CONF := lichee_rv_dock_config
+$(LINUX_IMAGE) kernel/config: LINUX_CONF := lichee_rv_dock_config
+
 
 modules: $(RTL8723DS_KO)
 

@@ -69,11 +69,19 @@ $(OPENSBI_BIN): | $(BUILD_OPENSBI_DIR)
 kernel: $(LINUX_IMAGE)
 $(LINUX_IMAGE): export KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
 $(LINUX_IMAGE): | $(BUILD_LINUX_DIR) $(INSTALL_MOD_PATH)
-	cp $(PATCHES_DIR)/linux/$(LINUX_CONF) $(KBUILD_OUTPUT)/.config
+	cp -u $(PATCHES_DIR)/linux/$(LINUX_CONF) $(KBUILD_OUTPUT)/.config
 	cd $(DEPS_DIR)/linux
 	$(MAKE) olddefconfig
 	$(MAKE)
 	$(MAKE) modules_install
+
+# kernel: make nconfig
+kernel/config: export KBUILD_OUTPUT := $(BUILD_LINUX_DIR)
+kernel/config: | $(BUILD_LINUX_DIR)
+kernel/config:
+	cp -u $(PATCHES_DIR)/linux/$(LINUX_CONF) $(KBUILD_OUTPUT)/.config
+	$(MAKE) -C $(DEPS_DIR)/linux nconfig
+	cp -u $(KBUILD_OUTPUT)/.config $(PATCHES_DIR)/linux/$(LINUX_CONF)
 
 ## build drivers (add V=12 for verbose output)
 drivers: $(LINUX_IMAGE)
