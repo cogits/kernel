@@ -20,7 +20,7 @@ $(board): image
 DEFAULT_VC := 1366x768
 # https://quard-star-tutorial.readthedocs.io/zh-cn/latest/ch7.html
 run: qemu $(BOOT_IMAGE)
-	$(QEMU) -M $(board) -m 1g -smp 4 -parallel none $(QEMUOPTS) \
+	$(QEMU) -M $(board) -m 1g -smp 8 -parallel none $(QEMUOPTS) \
 		-serial vc:$(DEFAULT_VC) -serial vc:$(DEFAULT_VC) -serial vc:$(DEFAULT_VC) -monitor vc:$(DEFAULT_VC) \
 		-drive if=pflash,bus=0,unit=0,format=raw,file=$(BOOT_IMAGE)
 

@@ -16,5 +16,7 @@ layout split
 # b *0x20000000
 # b *0x80000000
 # b sbi_init
+b sbi_domain_finalize
+b fdt_domain.c:43
 
 c
