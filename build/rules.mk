@@ -36,6 +36,8 @@ export KERNELRELEASE ?= 6.7.0
 # args (recursive evaluated)
 arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
+drop = $(let first rest,$(subst /, ,$@),\
+	   $(subst $(space),/,$(wordlist $1, $(words $(rest)), $(rest))))
 
 ## macros
 # changes to DEPS_DIR/$(1) and applies patches from PATCHES_DIR/$(1)
@@ -144,12 +146,12 @@ $(ALPINE_DIR):
 
 # clean
 clean/qemu:
-	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
+	$(MAKE) -C .. clean/deps/$(arg2)
 	rm -rf $(BUILD_QEMU_DIR)
 clean/uboot:
 	rm -rf $(BUILD_UBOOT_DIR)
 clean/opensbi:
-	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
+	$(MAKE) -C .. clean/deps/$(arg2)
 	rm -rf $(BUILD_OPENSBI_DIR)
 clean/kernel:
 	rm -rf $(BUILD_LINUX_DIR)
@@ -158,10 +160,10 @@ clean/kernel:
 clean/drivers:
 	$(MAKE) -C ../drivers clean
 $(addprefix clean/,$(SUB_DRIVERS)):
-	$(MAKE) -C ../drivers clean/$(@:clean/$(arg2)/%=%)
+	$(MAKE) -C ../drivers clean/$(call drop, 2)
 
 clean/busybox:
-	$(MAKE) -C .. clean/$(@:clean/%=deps/%)
+	$(MAKE) -C .. clean/deps/$(arg2)
 	rm -rf $(BUILD_BUSYBOX_DIR) $(BUSYBOX_DIR)
 clean/alpine:
 	$(SUDO) rm -rf $(ALPINE_DIR)

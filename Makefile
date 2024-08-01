@@ -22,9 +22,18 @@ export help_fmt_name := "  %-$(help_fmt_width)s\n"
 export help_fmt      := "  %-$(help_fmt_width)s- %s\n"
 export help_fmt_mark := "* %-$(help_fmt_width)s- %s\n"
 
+# special characters
+empty:=
+export space:= $(empty) $(empty)
+
 # args (recursive evaluated)
 arg1 = $(word 1,$(subst /, ,$@))
 arg2 = $(word 2,$(subst /, ,$@))
+
+# removes the first n components from the target path
+drop = $(let first rest,$(subst /, ,$@),\
+	   $(subst $(space),/,$(wordlist $1, $(words $(rest)), $(rest))))
+
 
 # platforms
 platforms := virt star dock
@@ -42,7 +51,7 @@ $(platforms):
 
 # <platform>/*
 $(addsuffix /%,$(platforms)):
-	$(MAKE) -C build -f $(arg1).mk $(@:$(arg1)/%=%)
+	$(MAKE) -C build -f $(arg1).mk $(call drop, 1)
 
 
 ## clean rules
@@ -55,28 +64,28 @@ distclean: $(CLEAN_DEPDIRS) $(CLEAN_PLATFORMS)
 
 # clean/deps/<dep>
 $(CLEAN_DEPDIRS):
-	cd $(@:clean/%=%)
+	cd $(call drop, 1)
 	git clean -fdx
 	git reset --hard
 
 # clean/<platform>
 $(CLEAN_PLATFORMS):
-	$(MAKE) -C build -f $(@:clean/%=%).mk clean
+	$(MAKE) -C build -f $(arg2).mk clean
 
 # clean/<platform>/*
 $(addsuffix /%,$(CLEAN_PLATFORMS)):
-	$(MAKE) -C build -f $(arg2).mk clean/$(@:clean/$(arg2)/%=%)
+	$(MAKE) -C build -f $(arg2).mk clean/$(call drop, 2)
 
 
 ## update rules
 update/%:
-	$(MAKE) clean/$(@:update/%=%)
-	$(MAKE) $(@:update/%=%)
+	$(MAKE) clean/$(call drop, 1)
+	$(MAKE) $(call drop, 1)
 
 ## execute commands using sudo
 sudo/%: export SUDO := $(if $(ROOT_USER),,sudo)
 sudo/%:
-	$(MAKE) $(@:sudo/%=%)
+	$(MAKE) $(call drop, 1)
 
 
 ## platform independent rules
