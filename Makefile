@@ -9,7 +9,7 @@ export PATCHES_DIR := $(ROOT)/patches
 
 # cross build environments
 export ARCH := riscv
-export CROSS_COMPILE := riscv64-linux-gnu-
+export CROSS_COMPILE ?= riscv64-linux-gnu-
 
 # global variables
 export ROOT_USER := $(shell test $$(id -u) -eq 0 && echo true)

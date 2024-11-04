@@ -24,7 +24,7 @@ QEMU := $(BUILD_QEMU_DIR)/qemu-system-riscv64
 LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 OPENSBI_BIN ?= $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 
-APK_STATIC := apk.static
+APK_STATIC ?= apk.static
 
 # 控制 modules 安装路径
 export INSTALL_MOD_PATH := $(BUILD_OUT_DIR)
