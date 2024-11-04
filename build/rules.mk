@@ -25,7 +25,7 @@ LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 OPENSBI_BIN ?= $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 
 
-APK_STATIC := apk.static
+APK_STATIC := apk
 VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
 VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
 
