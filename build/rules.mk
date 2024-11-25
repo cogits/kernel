@@ -99,7 +99,7 @@ $(SUB_DRIVERS): $(LINUX_IMAGE)
 busybox: $(BUSYBOX_DIR)
 $(BUSYBOX_DIR): export KBUILD_OUTPUT := $(BUILD_BUSYBOX_DIR)
 $(BUSYBOX_DIR): | $(BUILD_BUSYBOX_DIR)
-	$(call git-apply,busybox)
+	cd $(DEPS_DIR)/busybox
 	cp $(PATCHES_DIR)/busybox/config $(KBUILD_OUTPUT)/.config
 
 	$(MAKE) oldconfig
