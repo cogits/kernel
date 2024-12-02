@@ -1,6 +1,5 @@
 .ONESHELL:
 .SHELLFLAGS = -ec
-MAKEFLAGS += --no-print-directory
 
 # path definitions
 export ROOT := $(CURDIR)
@@ -87,6 +86,7 @@ $(COMMON_RULES) $(CLEAN_COMMON_RULES):
 	$(MAKE) -C build -f rules.mk $@
 
 ## help
+help $(HELP_PLATFORMS): MAKEFLAGS += --no-print-directory
 help:
 	@
 	echo "Top-level targets:"
