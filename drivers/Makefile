@@ -6,6 +6,7 @@ obj-y += sysfs/
 obj-y += threads/
 obj-y += tasks/
 obj-y += printk/
+obj-y += irq/
 
 # embed 目录，在编译 ko 之前必须生成 binary blob，所以需要单独编译
 # chardev 和 threads 需要额外编译用户态的程序
