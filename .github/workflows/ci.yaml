@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: install zig
+        uses: mlugg/setup-zig@v1
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-riscv64-linux-gnu flex bison bc swig device-tree-compiler
+          sudo apt-get install -y python3-venv libglib2.0-dev libfdt-dev meson ninja-build
+          sudo apt-get install -y fuse3 fuse2fs rsync
+      - name: make virt
+        run: |
+          echo "make -j $(nproc) virt"
+          make -j $(nproc) virt
