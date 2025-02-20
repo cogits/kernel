@@ -24,10 +24,7 @@ QEMU := $(BUILD_QEMU_DIR)/qemu-system-riscv64
 LINUX_IMAGE := $(BUILD_LINUX_DIR)/arch/riscv/boot/Image
 OPENSBI_BIN ?= $(BUILD_OPENSBI_DIR)/platform/generic/firmware/fw_dynamic.bin
 
-
 APK_STATIC := apk.static
-VALID_SUBUID := $(if $(ROOT_USER),,$(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true))
-VALID_SUBGID := $(if $(ROOT_USER),,$(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true))
 
 # 控制 modules 安装路径
 export INSTALL_MOD_PATH := $(BUILD_OUT_DIR)
@@ -120,8 +117,10 @@ alpine: $(ALPINE_DIR)
 $(ALPINE_DIR): mirror ?= $(ALPINE_MIRROR)
 $(ALPINE_DIR):
 	$(if $(ROOT_USER),,$(if $(SUDO),,
-		$(if $(VALID_SUBUID),,$(error subordinate user ID must be equal to UID, see subuid))
-		$(if $(VALID_SUBGID),,$(error subordinate group ID must be equal to GID, see subgid))
+		$(if $(shell test $$(getsubids $$(whoami) | awk '{print $$3}') -eq $$(id -u) && echo true),,
+			$(error subordinate user ID must be equal to UID, see subuid))
+		$(if $(shell test $$(getsubids -g $$(whoami) | awk '{print $$3}') -eq $$(id -g) && echo true),,
+			$(error subordinate group ID must be equal to GID, see subgid))
 		map_users=$$(getsubids $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
 		map_groups=$$(getsubids -g $$(whoami) | awk '{printf "%s,0,%s\n", $$3, $$4}')
 		unshare="unshare --map-users=$${map_users} --map-groups=$${map_groups} --setuid 0 --setgid 0 --wd $@"
