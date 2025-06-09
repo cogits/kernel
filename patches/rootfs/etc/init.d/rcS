@@ -18,3 +18,7 @@ telnetd -l ${LOGIN} &
 
 # mount nfs
 mount /mnt
+
+# use unprivileged ICMP ping sockets to allow ping to the Internet
+# https://www.qemu.org/docs/master/system/devices/net.html#using-the-user-mode-network-stack
+echo 0 0 > /proc/sys/net/ipv4/ping_group_range
