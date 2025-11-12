@@ -18,8 +18,8 @@ run: qemu opensbi kernel image
 	$(QEMU) -M virt -m 512M -smp 4 -nographic \
 		-bios $(OPENSBI_BIN) \
 		-kernel $(LINUX_IMAGE) \
-		-drive file=$(ROOTFS_IMAGE),format=raw,id=hd0 \
 		-device virtio-blk-device,drive=hd0 \
+		-drive file=$(ROOTFS_IMAGE),format=raw,id=hd0,if=none \
 		-netdev user,id=host_net0,hostfwd=tcp::7023-:23 \
 		-device e1000,mac=52:54:00:12:34:50,netdev=host_net0 \
 		-append "root=/dev/vda rw console=ttyS0"
@@ -95,7 +95,7 @@ image/busybox: $(BUSYBOX_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 image/alpine: alpine_extra_pkgs += binutils musl-utils
 image/alpine: $(ALPINE_DIR) | $(IMAGES_DIR) $(MOUNT_POINT)
 	cd $(IMAGES_DIR)
-	$(call create-ext4-rootfs,128)
+	$(call create-ext4-rootfs,256)
 
 	$(call $(if $(ROOT_USER),mount-loop,$(if $(SUDO),mount-loop,fuse-mount)),
 		$(SUDO) rsync -a $(ALPINE_DIR)/ $(MOUNT_POINT)

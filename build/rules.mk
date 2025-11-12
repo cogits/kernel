@@ -48,7 +48,7 @@ endef
 # https://zhuanlan.zhihu.com/p/258394849
 qemu: $(QEMU)
 $(QEMU): | $(BUILD_QEMU_DIR)
-	$(call git-apply,qemu)
+	# $(call git-apply,qemu)
 	cd $(BUILD_QEMU_DIR)
 	$(DEPS_DIR)/qemu/configure --target-list=riscv64-softmmu --enable-slirp
 	$(MAKE)

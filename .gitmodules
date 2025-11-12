@@ -9,7 +9,7 @@
 	url = https://github.com/u-boot/u-boot
 [submodule "deps/qemu"]
 	path = deps/qemu
-	url = https://github.com/qemu/qemu
+	url = https://gitlab.com/qemu-project/qemu
 [submodule "deps/uboot-d1"]
 	path = deps/uboot-d1
 	url = https://github.com/smaeul/u-boot

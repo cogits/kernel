@@ -10,11 +10,13 @@ Building linux kernel and drivers for different platforms:
 for compiling kernel, busybox and drivers:
 - [gcc-riscv64-linux-gnu](https://packages.debian.org/sid/gcc-riscv64-linux-gnu)
 - flex, bison, bc (building kernel)
+- libssl-dev, libgnutls28-dev (building uboot)
 - swig (building uboot-d1)
 - device-tree-compiler (building quard star)
 
 for compiling qemu:
 - [python3-venv](https://packages.debian.org/sid/python3-venv) (Python's ensurepip module)
+- python3-distlib
 - libglib2.0-dev
 - libslirp-dev (networking support)
 - libfdt-dev
@@ -26,7 +28,7 @@ for making busybox rootfs:
 - rsync (copying files)
 
 for making alpine rootfs (optional):
-- [qemu-user-static (binfmt support)](https://packages.debian.org/sid/qemu-user-static)
+- [qemu-user (binfmt support)](https://packages.debian.org/sid/qemu-user)
 - [apk.static (riscv64)](https://pkgs.alpinelinux.org/package/edge/main/riscv64/apk-tools-static)
 - unshare, [newuidmap](https://packages.debian.org/sid/uidmap)
 
@@ -38,9 +40,9 @@ $ cd kernel/deps
 $ rm -rf *
 $ git clone --depth=1 -b v6.7 git@github.com:torvalds/linux.git
 $ git clone --depth=1 -b 1_36_1 git://git.busybox.net/busybox
-$ git clone --depth=1 -b v2024.01 git@github.com:u-boot/u-boot.git
-$ git clone --depth=1 -b v8.2.2 git@github.com:qemu/qemu.git
-$ git clone --depth=1 -b v1.4 git@github.com:riscv-software-src/opensbi.git
+$ git clone --depth=1 -b v2025.10 git@github.com:u-boot/u-boot.git
+$ git clone --depth=1 -b v10.0.6 git@gitlab.com:qemu-project/qemu.git
+$ git clone --depth=1 -b v1.7 git@github.com:riscv-software-src/opensbi.git
 $ git clone --depth=1 -b d1-wip git@github.com:smaeul/u-boot.git uboot-d1
 $ git clone --depth=1 git@github.com:lwfinger/rtl8723ds.git
 $ git submodule update --init
